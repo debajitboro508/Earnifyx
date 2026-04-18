@@ -3,121 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earnifyx | Payment Empire</title>
+    <title>Earnifyx Admin | Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Outfit', sans-serif; background: #000; color: white; min-height: 100vh; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; }
-        .insta-input { background: #121212; border: 1px solid #262626; color: white; padding: 12px; border-radius: 8px; width: 100%; outline: none; margin-bottom: 10px; font-size: 14px; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .hidden { display: none !important; }
-        #adTracker { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        #adTracker.active { display: flex; }
-        .timer-circle { width: 120px; height: 120px; border: 5px solid #1e293b; border-top: 5px solid #6366f1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        body { background: #020617; color: white; min-height: 100vh; font-size: 12px; font-family: 'Outfit', sans-serif; }
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .data-table th, .data-table td { border: 1px solid #1e293b; padding: 10px; text-align: left; }
+        .data-table th { background: #1e1b4b; color: #818cf8; text-transform: uppercase; font-size: 10px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; overflow-y: auto; padding: 20px; }
+        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 24px; }
     </style>
 </head>
-<body class="pb-24">
+<body class="p-6">
 
-    <div id="adTracker">
-        <button onclick="closeAdTracker()" class="absolute top-10 left-6 text-white text-sm font-bold bg-white/10 px-4 py-2 rounded-full">← Back</button>
-        <div id="loadingUI">
-            <div class="timer-circle animate-spin"></div>
-            <h2 class="text-xl font-bold mb-4 italic">Ad Opening...</h2>
-            <p class="text-slate-400 text-xs mb-6">Ad load hone par hi coins milenge.</p>
-            <button onclick="startFinalCountdown()" class="bg-indigo-600 px-8 py-4 rounded-2xl font-black uppercase text-sm">Ad is Live ✅</button>
-            <button onclick="closeAdTracker()" class="mt-4 text-red-500 text-[10px] font-bold uppercase underline">Cancel</button>
+    <div id="dataModal" class="modal">
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="modalTitle" class="text-xl font-bold text-indigo-400 italic">Data View</h2>
+            <button onclick="document.getElementById('dataModal').style.display='none'" class="bg-red-600 px-4 py-1 rounded font-bold">CLOSE</button>
         </div>
-        <div id="timerUI" class="hidden flex-col items-center">
-            <div class="timer-circle"><span id="trackTime" class="text-4xl font-black text-indigo-500">10</span></div>
-            <h2 class="text-xl font-black text-white mb-2 uppercase italic">Validating Ad...</h2>
-            <p class="text-slate-400 text-[10px]">Back mat jana, coins add ho rahe hain.</p>
-        </div>
+        <div id="modalContent" class="overflow-x-auto"></div>
     </div>
 
-    <div id="authScreen" class="flex flex-col justify-center min-h-screen p-6 max-w-sm mx-auto text-center">
-        <div class="p-8 border border-[#262626] rounded-3xl bg-[#050505]">
-            <h1 class="text-4xl font-black italic mb-8 tracking-tighter text-indigo-500">Earnifyx</h1>
-            <input type="text" id="username" placeholder="Name" class="insta-input w-full">
-            <input type="email" id="email" placeholder="Email" class="insta-input w-full">
-            <input type="password" id="pass" placeholder="Password" class="insta-input w-full">
-            <button onclick="handleAuth()" class="w-full bg-[#0095f6] p-4 rounded-xl font-black uppercase mt-4">Get Started</button>
-            <button onclick="resetPass()" class="mt-4 text-[10px] text-slate-500 hover:text-white uppercase font-bold tracking-widest">Forgot Password?</button>
+    <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+            <h1 class="text-2xl font-black italic uppercase tracking-tighter">EARNIFYX <span class="text-indigo-500 text-sm">CONTROL</span></h1>
+            <div class="flex gap-2">
+                <button onclick="showData('users')" class="bg-indigo-600 px-4 py-2 rounded-lg font-bold uppercase text-[10px]">📊 View Users</button>
+                <button onclick="showData('withdrawals')" class="bg-green-600 px-4 py-2 rounded-lg font-bold uppercase text-[10px]">💰 View Payouts</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="card border-yellow-600/30">
+                <h3 class="font-bold mb-4 text-yellow-500 uppercase flex items-center gap-2">📢 Main Ad Management</h3>
+                <input type="text" id="adURL" placeholder="Paste Ad Link" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 outline-none">
+                <input type="number" id="adReward" placeholder="Reward Amount" class="w-full bg-black p-3 rounded-xl mb-4 border border-slate-800 outline-none">
+                <div class="flex gap-2">
+                    <button onclick="saveAd()" class="flex-1 bg-yellow-600 p-3 rounded-xl font-bold text-black uppercase">Update Ad</button>
+                    <button onclick="removeAd()" class="bg-red-600/20 text-red-500 px-4 rounded-xl font-bold uppercase text-[10px]">Remove</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="font-bold mb-4 text-indigo-400 uppercase">➕ Add New Task</h3>
+                <input type="text" id="tTitle" placeholder="Task Name" class="w-full bg-black p-3 rounded-xl mb-2 outline-none border border-slate-800">
+                <input type="number" id="tReward" placeholder="Reward Coins" class="w-full bg-black p-3 rounded-xl mb-2 outline-none border border-slate-800">
+                <input type="text" id="tLink" placeholder="Task Link" class="w-full bg-black p-3 rounded-xl mb-4 outline-none border border-slate-800">
+                <button onclick="addTask()" class="w-full bg-indigo-600 p-3 rounded-xl font-bold uppercase">Publish Task</button>
+            </div>
+
+            <div class="card border-green-600/20">
+                <h3 class="font-bold mb-4 text-green-500 uppercase">💸 Pending Payouts</h3>
+                <div id="quickPayouts" class="space-y-3">
+                    <p class="text-slate-500 italic text-[10px]">No pending requests...</p>
+                </div>
+            </div>
+
+            <div class="card border-red-600/20">
+                <h3 class="font-bold mb-4 text-red-500 uppercase">🗑️ Manage Active Tasks</h3>
+                <div id="adminTaskList" class="space-y-3">
+                    </div>
+            </div>
         </div>
     </div>
-
-    <div id="mainApp" class="hidden">
-        <header class="sticky top-0 z-50 bg-black border-b border-[#262626] p-4 flex justify-between items-center">
-            <h2 id="welcomeUser" class="text-xl font-black italic text-indigo-500">User</h2>
-            <div class="bg-[#121212] px-4 py-1 rounded-full border border-indigo-500/50 text-indigo-400 font-bold">
-                🪙 <span id="balance">0</span>
-            </div>
-        </header>
-
-        <div id="home" class="tab-content active p-4 space-y-4 max-w-lg mx-auto">
-            <div class="glass p-5 border-l-4 border-green-500 flex justify-between items-center">
-                <div><p class="font-bold text-sm">🎁 Daily Bonus</p><p class="text-[10px] text-slate-400 uppercase">10 Coins</p></div>
-                <button onclick="claimDailyBonus()" class="bg-green-600 px-4 py-2 rounded-xl text-[10px] font-black text-black">Claim</button>
-            </div>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Daily Tasks</h3>
-            <div id="adTaskContainer" class="hidden glass p-5 flex flex-col gap-2 border-l-4 border-yellow-500">
-                <div id="mainAdUI" class="flex justify-between items-center w-full"></div>
-            </div>
-            <div id="taskList" class="space-y-3"></div>
-        </div>
-
-        <div id="rules" class="tab-content p-4 space-y-4 max-w-lg mx-auto">
-            <h3 class="text-xl font-black italic text-indigo-500 uppercase">📜 Rules</h3>
-            <div class="glass p-5 space-y-4 border-l-4 border-indigo-600 text-xs text-slate-300">
-                <p>1. Ad open hone ke baad 10 second wait karna compulsory hai.</p>
-                <p>2. Profile mein Bank Details sahi se bharein.</p>
-                <p>3. Ek hi task ko baar baar karne par account ban ho sakta hai.</p>
-            </div>
-        </div>
-
-        <div id="wallet" class="tab-content p-4 space-y-6 max-w-lg mx-auto text-center">
-            <div class="glass p-10 bg-indigo-600/10 border border-indigo-500/30">
-                <h2 class="text-6xl font-black">🪙 <span id="wBal">0</span></h2>
-                <p class="text-green-500 font-bold mt-2">≈ ₹<span id="cashVal">0</span></p>
-            </div>
-            <button onclick="handleWithdraw(2000)" class="w-full glass p-5 flex justify-between items-center border border-slate-800">Withdraw ₹20</button>
-            <button onclick="handleWithdraw(5000)" class="w-full glass p-5 flex justify-between items-center border border-slate-800">Withdraw ₹50</button>
-        </div>
-
-        <div id="profile" class="tab-content p-6 max-w-lg mx-auto">
-            <div class="glass p-6 space-y-4 border border-slate-800">
-                <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Bank & Personal Info</p>
-                <input type="text" id="pName" placeholder="Full Name" class="insta-input w-full">
-                <input type="number" id="pMobile" placeholder="Mobile" class="insta-input w-full">
-                <input type="text" id="pAcc" placeholder="Account Number" class="insta-input w-full">
-                <input type="text" id="pIFSC" placeholder="IFSC Code" class="insta-input w-full">
-                <input type="text" id="pBranch" placeholder="Branch" class="insta-input w-full">
-                <input type="number" id="pPin" placeholder="Pin Code" class="insta-input w-full">
-                <select id="pGender" class="insta-input w-full bg-[#121212]">
-                    <option value="" disabled selected>Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                </select>
-                <button onclick="saveProfile()" class="w-full bg-white text-black p-4 rounded-xl font-black text-xs uppercase">Save Profile</button>
-            </div>
-            <button onclick="logout()" class="w-full mt-10 text-red-500 font-bold text-xs underline uppercase">Logout</button>
-        </div>
-    </div>
-
-    <nav id="navBar" class="hidden fixed bottom-0 left-0 right-0 bg-black border-t border-[#262626] p-4 flex justify-around z-50">
-        <button onclick="switchTab('home')">🏠</button>
-        <button onclick="switchTab('rules')">📜</button>
-        <button onclick="switchTab('wallet')">💳</button>
-        <button onclick="switchTab('profile')">👤</button>
-    </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, deleteDoc, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDZ8MsMjt-dhXjY-fyYYtOs-X6UmvLAV3I",
@@ -129,124 +81,113 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let activeReward = 0; let userData = {};
-
-        window.closeAdTracker = () => {
-            document.getElementById('adTracker').classList.remove('active');
+        // --- Ad Controls ---
+        window.saveAd = async () => {
+            const link = document.getElementById('adURL').value;
+            const reward = parseInt(document.getElementById('adReward').value);
+            if(!link || !reward) return alert("Details bhariye");
+            await setDoc(doc(db, "settings", "ads"), { link, reward, name: "Main Reward Ad" });
+            alert("Main Ad Updated!");
         };
 
-        window.resetPass = () => {
-            const email = document.getElementById('email').value;
-            if(!email) return alert("Pehle email box mein apna email likhein!");
-            sendPasswordResetEmail(auth, email).then(() => alert("Password reset link bhej di gayi hai!")).catch(e => alert(e.message));
-        };
-
-        window.startAdFlow = (reward, link) => {
-            activeReward = reward;
-            window.open(link, '_blank');
-            document.getElementById('adTracker').classList.add('active');
-            document.getElementById('loadingUI').classList.remove('hidden');
-            document.getElementById('timerUI').classList.add('hidden');
-        };
-
-        window.startFinalCountdown = () => {
-            document.getElementById('loadingUI').classList.add('hidden');
-            document.getElementById('timerUI').classList.remove('hidden');
-            let timeLeft = 10; // 10 Second minimum stay
-            const countdown = setInterval(async () => {
-                timeLeft--;
-                document.getElementById('trackTime').innerText = timeLeft;
-                if(timeLeft <= 0) {
-                    clearInterval(countdown);
-                    await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(activeReward) });
-                    document.getElementById('adTracker').classList.remove('active');
-                    confetti({ particleCount: 150 });
-                }
-            }, 1000);
-        };
-
-        onAuthStateChanged(auth, (user) => {
-            if(user) {
-                document.getElementById('authScreen').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                document.getElementById('navBar').classList.remove('hidden');
-                sync(user.uid);
+        window.removeAd = async () => {
+            if(confirm("Kyu bhai? Ad sach mein hatana hai?")) {
+                await deleteDoc(doc(db, "settings", "ads"));
+                alert("Ad Removed!");
             }
-        });
+        };
 
-        function sync(uid) {
-            onSnapshot(doc(db, "settings", "ads"), (d) => {
-                if(d.exists()) {
-                    const r = d.data().reward || 40;
-                    document.getElementById('mainAdUI').innerHTML = `<div><p class='font-bold text-sm'>📺 Main Ad</p><p class='text-yellow-500 font-black text-[10px]'>+${r} Coins</p></div><button onclick="startAdFlow(${r}, '${d.data().link}')" class='bg-yellow-600 px-6 py-2 rounded-xl text-[10px] font-black'>WATCH</button>`;
-                    document.getElementById('adTaskContainer').classList.remove('hidden');
-                }
-            });
+        // --- Task Controls ---
+        window.addTask = async () => {
+            const title = document.getElementById('tTitle').value;
+            const reward = parseInt(document.getElementById('tReward').value);
+            const link = document.getElementById('tLink').value;
+            if(!title || !reward || !link) return alert("Sari fields bhariye");
+            await addDoc(collection(db, "tasks"), { title, reward, link });
+            alert("Task Published!");
+            document.getElementById('tTitle').value = "";
+            document.getElementById('tReward').value = "";
+            document.getElementById('tLink').value = "";
+        };
 
-            onSnapshot(doc(db, "users", uid), (d) => {
-                if(d.exists()){
-                    userData = d.data();
-                    document.getElementById('balance').innerText = userData.coins || 0;
-                    document.getElementById('wBal').innerText = userData.coins || 0;
-                    document.getElementById('cashVal').innerText = ((userData.coins || 0)/100).toFixed(0);
-                    document.getElementById('welcomeUser').innerText = userData.username || "User";
-                }
-            });
+        window.deleteTask = async (id) => {
+            if(confirm("Ye task delete karu?")) {
+                await deleteDoc(doc(db, "tasks", id));
+            }
+        };
 
+        // --- Realtime Sync ---
+        function sync() {
+            // Task List Sync with Delete Buttons
             onSnapshot(collection(db, "tasks"), (s) => {
-                const list = document.getElementById('taskList'); list.innerHTML = "";
+                const list = document.getElementById('adminTaskList');
+                list.innerHTML = "";
                 s.forEach(t => {
-                    const task = t.data();
-                    list.innerHTML += `<div class="glass p-5 flex justify-between items-center border-l-4 border-indigo-600"><div><p class="font-bold text-sm">${task.title}</p><p class="text-[10px] text-indigo-400 font-black">+${task.reward} Coins</p></div><button onclick="startAdFlow(${task.reward}, '${task.link}')" class="bg-indigo-600 px-6 py-2 rounded-xl text-[10px] font-black">START</button></div>`;
+                    const data = t.data();
+                    list.innerHTML += `
+                        <div class="bg-black/40 p-3 rounded-xl flex justify-between items-center border border-slate-800">
+                            <div>
+                                <p class="font-bold text-white text-[11px]">${data.title}</p>
+                                <p class="text-indigo-400 text-[9px] uppercase font-black">+${data.reward} Coins</p>
+                            </div>
+                            <button onclick="deleteTask('${t.id}')" class="bg-red-600/20 text-red-500 px-3 py-1 rounded-lg text-[9px] font-bold uppercase hover:bg-red-600 hover:text-white transition">Delete</button>
+                        </div>`;
+                });
+            });
+
+            // Pending Payouts Sync
+            onSnapshot(collection(db, "withdrawals"), (s) => {
+                const list = document.getElementById('quickPayouts');
+                list.innerHTML = "";
+                s.forEach(d => {
+                    const data = d.data();
+                    if(data.status === "pending") {
+                        list.innerHTML += `
+                            <div class="bg-black/40 p-3 rounded-xl border border-slate-800">
+                                <p class="text-green-400 font-black">₹${data.amt/100}</p>
+                                <p class="text-slate-500 text-[9px] truncate">${data.email}</p>
+                                <button onclick="approve('${d.id}')" class="w-full mt-2 bg-green-600 py-1 rounded-lg text-[10px] font-bold uppercase">Mark Paid</button>
+                            </div>`;
+                    }
                 });
             });
         }
 
-        window.claimDailyBonus = async () => {
-            const today = new Date().toDateString();
-            if(userData.lastBonus === today) return alert("Already claimed!");
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(10), lastBonus: today });
-            alert("10 Coins Added!");
+        window.approve = async (id) => {
+            await updateDoc(doc(db, "withdrawals", id), { status: "approved" });
+            alert("Marked as Paid!");
         };
 
-        window.saveProfile = async () => {
-            const details = {
-                username: document.getElementById('pName').value,
-                pName: document.getElementById('pName').value,
-                pMobile: document.getElementById('pMobile').value,
-                pAcc: document.getElementById('pAcc').value,
-                pIFSC: document.getElementById('pIFSC').value,
-                pBranch: document.getElementById('pBranch').value,
-                pPin: document.getElementById('pPin').value,
-                pGender: document.getElementById('pGender').value,
-                profileDone: true
-            };
-            await updateDoc(doc(db, "users", auth.currentUser.uid), details);
-            alert("Profile Saved!");
+        // --- Full Data View ---
+        window.showData = async (type) => {
+            const modal = document.getElementById('dataModal');
+            const content = document.getElementById('modalContent');
+            modal.style.display = "block";
+            content.innerHTML = "Loading...";
+
+            const querySnapshot = await getDocs(collection(db, type));
+            let html = "<table class='data-table'><thead><tr>";
+            
+            if (type === 'users') {
+                html += "<th>Name</th><th>Coins</th><th>Details</th></tr></thead><tbody>";
+                querySnapshot.forEach((doc) => {
+                    const d = doc.data();
+                    html += `<tr><td>${d.username}</td><td>${d.coins}</td><td>Mob: ${d.pMobile || 'N/A'}<br>Pin: ${d.pPin || 'N/A'}</td></tr>`;
+                });
+            } else {
+                html += "<th>Date</th><th>Amount</th><th>Info</th><th>Status</th></tr></thead><tbody>";
+                querySnapshot.forEach((doc) => {
+                    const d = doc.data();
+                    html += `<tr><td>${d.date}</td><td>₹${d.amt/100}</td><td>${d.info}</td><td>${d.status}</td></tr>`;
+                });
+            }
+            html += "</tbody></table>";
+            content.innerHTML = html;
         };
 
-        window.handleWithdraw = async (amt) => {
-            if(userData.coins < amt) return alert("Low balance!");
-            if(!userData.profileDone) return alert("Save Bank Details in Profile first!");
-            const info = `Name: ${userData.pName} | Mob: ${userData.pMobile} | Acc: ${userData.pAcc} | IFSC: ${userData.pIFSC} | Branch: ${userData.pBranch} | Pin: ${userData.pPin}`;
-            await addDoc(collection(db, "withdrawals"), { uid: auth.currentUser.uid, email: userData.email, amt, info, status: "pending", date: new Date().toLocaleString() });
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(-amt) });
-            alert("Withdrawal Requested!");
-        };
-
-        window.handleAuth = async () => {
-            const e = document.getElementById('email').value, p = document.getElementById('pass').value, u = document.getElementById('username').value;
-            try {
-                const r = await createUserWithEmailAndPassword(auth, e, p);
-                await setDoc(doc(db, "users", r.user.uid), { username: u, email: e, coins: 100, profileDone: false, lastBonus: "" });
-            } catch(err) { signInWithEmailAndPassword(auth, e, p).catch(e => alert(e.message)); }
-        };
-
-        window.switchTab = (id) => { document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); };
-        window.logout = () => signOut(auth).then(() => location.reload());
+        sync();
     </script>
 </body>
-    </html>
+</html>
