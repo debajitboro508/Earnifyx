@@ -16,7 +16,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .hidden { display: none !important; }
 
-        /* --- THE AD OVERLAY WITH LAL X BUTTON --- */
         #adWrapper { display: none; position: fixed; inset: 0; background: #000; z-index: 99999; }
         #adWrapper.active { display: block; }
         #adIframe { width: 100%; height: 100%; border: none; }
@@ -43,7 +42,7 @@
         <iframe id="adIframe" src=""></iframe>
     </div>
 
-    <div id="authScreen" class="flex flex-col justify-center min-h-screen p-6 max-w-sm mx-auto text-center">
+    <div id="authScreen" class="flex flex-col justify-center min-h-screen p-6 max-sm mx-auto text-center">
         <div class="p-8 border border-[#262626] rounded-3xl bg-[#050505]">
             <h1 class="text-4xl font-black italic mb-8 tracking-tighter text-indigo-500">Earnifyx</h1>
             <input type="text" id="username" placeholder="Name" class="insta-input w-full">
@@ -92,6 +91,7 @@
                 <input type="text" id="pName" placeholder="Full Name" class="insta-input w-full">
                 <input type="text" id="pAcc" placeholder="UPI ID / Account No" class="insta-input w-full">
                 <input type="text" id="pIFSC" placeholder="IFSC Code" class="insta-input w-full">
+                <input type="text" id="pBranch" placeholder="Branch Name" class="insta-input w-full">
                 <button onclick="saveProfile()" class="w-full bg-white text-black p-4 rounded-xl font-black text-xs uppercase">Save Profile</button>
             </div>
             <button onclick="logout()" class="w-full mt-10 text-red-500 font-bold text-xs underline uppercase">Logout</button>
@@ -107,7 +107,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, updateDoc, increment, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, updateDoc, increment, query, orderBy, limit, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDZ8MsMjt-dhXjY-fyYYtOs-X6UmvLAV3I",
@@ -122,11 +122,11 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let activeReward = 0; let userData = {};
+        let activeReward = 0; let activeTaskId = ""; let userData = {};
 
-        // --- AD OVERLAY LOGIC (Fixed to 50s) ---
-        window.startAdFlow = (reward, link) => {
+        window.startAdFlow = (reward, link, taskId) => {
             activeReward = parseInt(reward);
+            activeTaskId = taskId;
             const wrapper = document.getElementById('adWrapper');
             const iframe = document.getElementById('adIframe');
             const xBtn = document.getElementById('adCloseButton');
@@ -139,28 +139,40 @@
             wrapper.classList.add('active');
             xBtn.style.display = "none";
 
-            let timeLeft = 50; // Timer set to 50 seconds
+            let timeLeft = 50;
             timerSec.innerText = timeLeft;
             const countdown = setInterval(() => {
                 timeLeft--;
                 timerSec.innerText = timeLeft;
                 if(timeLeft <= 0) {
                     clearInterval(countdown);
-                    xBtn.style.display = "flex"; // SHOW LAL X
+                    xBtn.style.display = "flex";
                 }
             }, 1000);
         };
 
         window.finishTaskAndPay = async () => {
             if(activeReward <= 0) return;
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(activeReward) });
+            const today = new Date().toDateString();
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            
+            let taskLogs = userData.taskLogs || {};
+            if(!taskLogs[today]) taskLogs = { [today]: {} };
+            
+            taskLogs[today][activeTaskId] = (taskLogs[today][activeTaskId] || 0) + 1;
+
+            await updateDoc(userRef, { 
+                coins: increment(activeReward),
+                taskLogs: taskLogs
+            });
+
             document.getElementById('adWrapper').classList.remove('active');
             document.getElementById('adIframe').src = "";
             confetti({ particleCount: 150 });
             activeReward = 0;
+            activeTaskId = "";
         };
 
-        // --- AUTH & SYNC ---
         window.resetPass = () => {
             const email = document.getElementById('email').value;
             if(!email) return alert("Pehle email box mein apna email likhein!");
@@ -182,15 +194,17 @@
                     userData = d.data();
                     document.getElementById('balance').innerText = userData.coins || 0;
                     document.getElementById('wBal').innerText = userData.coins || 0;
-                    // Fix: 100 Coins = 1 Rupee for Profit
                     document.getElementById('cashVal').innerText = ((userData.coins || 0)/100).toFixed(0);
                     document.getElementById('welcomeUser').innerText = userData.username || "User";
-                    const s = userData.bonusStreak || 0;
-                    document.getElementById('bonusInfo').innerText = `Streak: ${s} Days`;
+                    document.getElementById('bonusInfo').innerText = `Streak: ${userData.bonusStreak || 0} Days`;
+                    
+                    if(userData.pName) document.getElementById('pName').value = userData.pName;
+                    if(userData.pAcc) document.getElementById('pAcc').value = userData.pAcc;
+                    if(userData.pIFSC) document.getElementById('pIFSC').value = userData.pIFSC;
+                    if(userData.pBranch) document.getElementById('pBranch').value = userData.pBranch;
                 }
             });
 
-            // TOP 10 USERS
             const q = query(collection(db, "users"), orderBy("coins", "desc"), limit(10));
             onSnapshot(q, (s) => {
                 const lb = document.getElementById('leaderboard'); lb.innerHTML = "";
@@ -201,12 +215,19 @@
                 });
             });
 
-            // ADMIN DYNAMIC COINS FROM "tasks"
             onSnapshot(collection(db, "tasks"), (s) => {
                 const list = document.getElementById('taskList'); list.innerHTML = "";
+                const today = new Date().toDateString();
+                const logs = (userData.taskLogs && userData.taskLogs[today]) ? userData.taskLogs[today] : {};
+
                 s.forEach(t => {
                     const task = t.data();
-                    list.innerHTML += `<div class="glass p-5 flex justify-between items-center border-l-4 border-indigo-600"><div><p class="font-bold text-sm italic">${task.title}</p><p class="text-[10px] text-indigo-400 font-black">+${task.reward} Coins</p></div><button onclick="startAdFlow('${task.reward}', '${task.link}')" class="bg-indigo-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase">Watch</button></div>`;
+                    const taskId = t.id;
+                    const count = logs[taskId] || 0;
+
+                    if(count < 2) {
+                        list.innerHTML += `<div class="glass p-5 flex justify-between items-center border-l-4 border-indigo-600"><div><p class="font-bold text-sm italic">${task.title}</p><p class="text-[10px] text-indigo-400 font-black">+${task.reward} Coins (${2-count} Left)</p></div><button onclick="startAdFlow('${task.reward}', '${task.link}', '${taskId}')" class="bg-indigo-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase">Watch</button></div>`;
+                    }
                 });
             });
         }
@@ -214,29 +235,18 @@
         window.claimDailyBonus = async () => {
             const today = new Date().toDateString();
             if(userData.lastBonusDate === today) return alert("Already claimed today!");
-            
-            // Streak Logic: Reset to 1 after 6 days
             let streak = (userData.bonusStreak >= 6) ? 1 : (userData.bonusStreak || 0) + 1;
-            
-            // Bonus Amount Logic (1-3 days: 50, 4-6 days: 100)
             const amt = (streak <= 3) ? 50 : 100;
-            
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-                coins: increment(amt), 
-                lastBonusDate: today, 
-                bonusStreak: streak 
-            });
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(amt), lastBonusDate: today, bonusStreak: streak });
             alert(`Day ${streak}: ${amt} Coins Claimed!`);
         };
 
         window.saveProfile = async () => {
-            const name = document.getElementById('pName').value;
-            const acc = document.getElementById('pAcc').value;
-            if(!name || !acc) return alert("Please fill details!");
             await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-                username: name, 
-                pAcc: acc, 
+                pName: document.getElementById('pName').value, 
+                pAcc: document.getElementById('pAcc').value, 
                 pIFSC: document.getElementById('pIFSC').value,
+                pBranch: document.getElementById('pBranch').value,
                 profileDone: true 
             });
             alert("Profile Saved!");
@@ -244,16 +254,10 @@
 
         window.handleWithdraw = async (amt) => {
             if(userData.coins < amt) return alert("Low balance!");
-            if(!userData.profileDone) return alert("Please complete Bank Details first!");
-            await addDoc(collection(db, "withdrawals"), { 
-                uid: auth.currentUser.uid, 
-                username: userData.username,
-                amt, 
-                status: "pending", 
-                date: new Date().toLocaleString() 
-            });
+            if(!userData.profileDone) return alert("Please complete Profile first!");
+            await addDoc(collection(db, "withdrawals"), { uid: auth.currentUser.uid, username: userData.username, amt, status: "pending", date: new Date().toLocaleString() });
             await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(-amt) });
-            alert("Withdrawal Requested Successfully!");
+            alert("Requested!");
         };
 
         window.handleAuth = async () => {
@@ -261,7 +265,7 @@
             if(!e || !p) return alert("Email/Pass missing");
             try {
                 const r = await createUserWithEmailAndPassword(auth, e, p);
-                await setDoc(doc(db, "users", r.user.uid), { username: u, email: e, coins: 100, bonusStreak: 0, profileDone: false });
+                await setDoc(doc(db, "users", r.user.uid), { username: u, email: e, coins: 100, bonusStreak: 0, profileDone: false, taskLogs: {} });
             } catch { signInWithEmailAndPassword(auth, e, p).catch(err => alert(err.message)); }
         };
 
