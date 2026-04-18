@@ -15,27 +15,32 @@
         .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .hidden { display: none !important; }
-        #adTracker { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        #adTracker.active { display: flex; }
-        .timer-circle { width: 120px; height: 120px; border: 5px solid #1e293b; border-top: 5px solid #6366f1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+
+        /* --- THE AD OVERLAY WITH LAL X BUTTON --- */
+        #adWrapper { display: none; position: fixed; inset: 0; background: #000; z-index: 99999; }
+        #adWrapper.active { display: block; }
+        #adIframe { width: 100%; height: 100%; border: none; }
+        #adCloseButton { 
+            display: none; position: absolute; top: 15px; right: 15px; 
+            background: #ff0000; color: white; width: 45px; height: 45px; 
+            border-radius: 50%; font-weight: 900; border: 2px solid #fff;
+            box-shadow: 0 0 20px rgba(255,0,0,0.6); z-index: 100000;
+            align-items: center; justify-content: center; cursor: pointer;
+        }
+        #adCounter {
+            position: absolute; top: 15px; left: 15px;
+            background: rgba(0,0,0,0.8); color: #fff; padding: 6px 15px;
+            border-radius: 20px; font-size: 12px; font-weight: bold;
+            z-index: 100000;
+        }
     </style>
 </head>
 <body class="pb-24">
 
-    <div id="adTracker">
-        <button onclick="closeAdTracker()" class="absolute top-10 left-6 text-white text-sm font-bold bg-white/10 px-4 py-2 rounded-full">← Back</button>
-        <div id="loadingUI">
-            <div class="timer-circle animate-spin"></div>
-            <h2 class="text-xl font-bold mb-4 italic">Ad Opening...</h2>
-            <p class="text-slate-400 text-xs mb-6">Ad load hone par hi coins milenge.</p>
-            <button onclick="startFinalCountdown()" class="bg-indigo-600 px-8 py-4 rounded-2xl font-black uppercase text-sm">Ad is Live ✅</button>
-            <button onclick="closeAdTracker()" class="mt-4 text-red-500 text-[10px] font-bold uppercase underline">Cancel</button>
-        </div>
-        <div id="timerUI" class="hidden flex-col items-center">
-            <div class="timer-circle"><span id="trackTime" class="text-4xl font-black text-indigo-500">10</span></div>
-            <h2 class="text-xl font-black text-white mb-2 uppercase italic">Validating Ad...</h2>
-            <p class="text-slate-400 text-[10px]">Back mat jana, coins add ho rahe hain.</p>
-        </div>
+    <div id="adWrapper">
+        <div id="adCounter">Wait <span id="adTimerSec">50</span>s for Reward</div>
+        <button id="adCloseButton" onclick="finishTaskAndPay()">✕</button>
+        <iframe id="adIframe" src=""></iframe>
     </div>
 
     <div id="authScreen" class="flex flex-col justify-center min-h-screen p-6 max-w-sm mx-auto text-center">
@@ -59,22 +64,16 @@
 
         <div id="home" class="tab-content active p-4 space-y-4 max-w-lg mx-auto">
             <div class="glass p-5 border-l-4 border-green-500 flex justify-between items-center">
-                <div><p class="font-bold text-sm">🎁 Daily Bonus</p><p class="text-[10px] text-slate-400 uppercase">10 Coins</p></div>
+                <div><p class="font-bold text-sm">🎁 Daily Bonus</p><p id="bonusInfo" class="text-[10px] text-slate-400 uppercase">Check Streak</p></div>
                 <button onclick="claimDailyBonus()" class="bg-green-600 px-4 py-2 rounded-xl text-[10px] font-black text-black">Claim</button>
             </div>
+            
             <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Daily Tasks</h3>
-            <div id="adTaskContainer" class="hidden glass p-5 flex flex-col gap-2 border-l-4 border-yellow-500">
-                <div id="mainAdUI" class="flex justify-between items-center w-full"></div>
-            </div>
             <div id="taskList" class="space-y-3"></div>
-        </div>
 
-        <div id="rules" class="tab-content p-4 space-y-4 max-w-lg mx-auto">
-            <h3 class="text-xl font-black italic text-indigo-500 uppercase">📜 Rules</h3>
-            <div class="glass p-5 space-y-4 border-l-4 border-indigo-600 text-xs text-slate-300">
-                <p>1. Ad open hone ke baad 10 second wait karna compulsory hai.</p>
-                <p>2. Profile mein Bank Details sahi se bharein.</p>
-                <p>3. Ek hi task ko baar baar karne par account ban ho sakta hai.</p>
+            <div class="pt-6">
+                <h3 class="text-[10px] font-black text-indigo-500 uppercase mb-3 text-center tracking-widest">🏆 Top 10 Earners</h3>
+                <div id="leaderboard" class="glass p-4 text-[11px] space-y-3"></div>
             </div>
         </div>
 
@@ -83,24 +82,16 @@
                 <h2 class="text-6xl font-black">🪙 <span id="wBal">0</span></h2>
                 <p class="text-green-500 font-bold mt-2">≈ ₹<span id="cashVal">0</span></p>
             </div>
-            <button onclick="handleWithdraw(2000)" class="w-full glass p-5 flex justify-between items-center border border-slate-800">Withdraw ₹20</button>
-            <button onclick="handleWithdraw(5000)" class="w-full glass p-5 flex justify-between items-center border border-slate-800">Withdraw ₹50</button>
+            <button onclick="handleWithdraw(2000)" class="w-full glass p-5 flex justify-between items-center border border-slate-800 text-xs font-bold">Withdraw ₹20 <span>2000 🪙</span></button>
+            <button onclick="handleWithdraw(5000)" class="w-full glass p-5 flex justify-between items-center border border-slate-800 text-xs font-bold">Withdraw ₹50 <span>5000 🪙</span></button>
         </div>
 
         <div id="profile" class="tab-content p-6 max-w-lg mx-auto">
             <div class="glass p-6 space-y-4 border border-slate-800">
-                <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Bank & Personal Info</p>
+                <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Bank Details</p>
                 <input type="text" id="pName" placeholder="Full Name" class="insta-input w-full">
-                <input type="number" id="pMobile" placeholder="Mobile" class="insta-input w-full">
-                <input type="text" id="pAcc" placeholder="Account Number" class="insta-input w-full">
+                <input type="text" id="pAcc" placeholder="UPI ID / Account No" class="insta-input w-full">
                 <input type="text" id="pIFSC" placeholder="IFSC Code" class="insta-input w-full">
-                <input type="text" id="pBranch" placeholder="Branch" class="insta-input w-full">
-                <input type="number" id="pPin" placeholder="Pin Code" class="insta-input w-full">
-                <select id="pGender" class="insta-input w-full bg-[#121212]">
-                    <option value="" disabled selected>Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                </select>
                 <button onclick="saveProfile()" class="w-full bg-white text-black p-4 rounded-xl font-black text-xs uppercase">Save Profile</button>
             </div>
             <button onclick="logout()" class="w-full mt-10 text-red-500 font-bold text-xs underline uppercase">Logout</button>
@@ -109,7 +100,6 @@
 
     <nav id="navBar" class="hidden fixed bottom-0 left-0 right-0 bg-black border-t border-[#262626] p-4 flex justify-around z-50">
         <button onclick="switchTab('home')">🏠</button>
-        <button onclick="switchTab('rules')">📜</button>
         <button onclick="switchTab('wallet')">💳</button>
         <button onclick="switchTab('profile')">👤</button>
     </nav>
@@ -117,7 +107,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, updateDoc, increment, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDZ8MsMjt-dhXjY-fyYYtOs-X6UmvLAV3I",
@@ -134,38 +124,46 @@
 
         let activeReward = 0; let userData = {};
 
-        window.closeAdTracker = () => {
-            document.getElementById('adTracker').classList.remove('active');
+        // --- AD OVERLAY LOGIC ---
+        window.startAdFlow = (reward, link) => {
+            activeReward = parseInt(reward);
+            const wrapper = document.getElementById('adWrapper');
+            const iframe = document.getElementById('adIframe');
+            const xBtn = document.getElementById('adCloseButton');
+            const timerSec = document.getElementById('adTimerSec');
+
+            let finalLink = link;
+            if(link.includes('youtube.com/watch?v=')) finalLink = link.replace('watch?v=', 'embed/');
+
+            iframe.src = finalLink;
+            wrapper.classList.add('active');
+            xBtn.style.display = "none";
+
+            let timeLeft = 50; 
+            const countdown = setInterval(() => {
+                timeLeft--;
+                timerSec.innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(countdown);
+                    xBtn.style.display = "flex"; // SHOW LAL X
+                }
+            }, 1000);
         };
 
+        window.finishTaskAndPay = async () => {
+            if(activeReward <= 0) return;
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(activeReward) });
+            document.getElementById('adWrapper').classList.remove('active');
+            document.getElementById('adIframe').src = "";
+            confetti({ particleCount: 150 });
+            activeReward = 0;
+        };
+
+        // --- AUTH & SYNC ---
         window.resetPass = () => {
             const email = document.getElementById('email').value;
             if(!email) return alert("Pehle email box mein apna email likhein!");
-            sendPasswordResetEmail(auth, email).then(() => alert("Password reset link bhej di gayi hai!")).catch(e => alert(e.message));
-        };
-
-        window.startAdFlow = (reward, link) => {
-            activeReward = reward;
-            window.open(link, '_blank');
-            document.getElementById('adTracker').classList.add('active');
-            document.getElementById('loadingUI').classList.remove('hidden');
-            document.getElementById('timerUI').classList.add('hidden');
-        };
-
-        window.startFinalCountdown = () => {
-            document.getElementById('loadingUI').classList.add('hidden');
-            document.getElementById('timerUI').classList.remove('hidden');
-            let timeLeft = 10; // 10 Second minimum stay
-            const countdown = setInterval(async () => {
-                timeLeft--;
-                document.getElementById('trackTime').innerText = timeLeft;
-                if(timeLeft <= 0) {
-                    clearInterval(countdown);
-                    await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(activeReward) });
-                    document.getElementById('adTracker').classList.remove('active');
-                    confetti({ particleCount: 150 });
-                }
-            }, 1000);
+            sendPasswordResetEmail(auth, email).then(() => alert("Reset link sent!")).catch(e => alert(e.message));
         };
 
         onAuthStateChanged(auth, (user) => {
@@ -178,14 +176,6 @@
         });
 
         function sync(uid) {
-            onSnapshot(doc(db, "settings", "ads"), (d) => {
-                if(d.exists()) {
-                    const r = d.data().reward || 40;
-                    document.getElementById('mainAdUI').innerHTML = `<div><p class='font-bold text-sm'>📺 Main Ad</p><p class='text-yellow-500 font-black text-[10px]'>+${r} Coins</p></div><button onclick="startAdFlow(${r}, '${d.data().link}')" class='bg-yellow-600 px-6 py-2 rounded-xl text-[10px] font-black'>WATCH</button>`;
-                    document.getElementById('adTaskContainer').classList.remove('hidden');
-                }
-            });
-
             onSnapshot(doc(db, "users", uid), (d) => {
                 if(d.exists()){
                     userData = d.data();
@@ -193,56 +183,60 @@
                     document.getElementById('wBal').innerText = userData.coins || 0;
                     document.getElementById('cashVal').innerText = ((userData.coins || 0)/100).toFixed(0);
                     document.getElementById('welcomeUser').innerText = userData.username || "User";
+                    const s = userData.bonusStreak || 0;
+                    document.getElementById('bonusInfo').innerText = `Streak: ${s} Days`;
                 }
             });
 
+            // TOP 10 USERS
+            const q = query(collection(db, "users"), orderBy("coins", "desc"), limit(10));
+            onSnapshot(q, (s) => {
+                const lb = document.getElementById('leaderboard'); lb.innerHTML = "";
+                s.forEach((doc, i) => {
+                    const u = doc.data();
+                    const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "👤";
+                    lb.innerHTML += `<div class="flex justify-between p-2 rounded-xl bg-white/5 border border-white/5"><span>${i+1}. ${medal} ${u.username}</span><span class="text-indigo-400 font-black">🪙 ${u.coins}</span></div>`;
+                });
+            });
+
+            // ADMIN DYNAMIC COINS FROM "tasks"
             onSnapshot(collection(db, "tasks"), (s) => {
                 const list = document.getElementById('taskList'); list.innerHTML = "";
                 s.forEach(t => {
                     const task = t.data();
-                    list.innerHTML += `<div class="glass p-5 flex justify-between items-center border-l-4 border-indigo-600"><div><p class="font-bold text-sm">${task.title}</p><p class="text-[10px] text-indigo-400 font-black">+${task.reward} Coins</p></div><button onclick="startAdFlow(${task.reward}, '${task.link}')" class="bg-indigo-600 px-6 py-2 rounded-xl text-[10px] font-black">START</button></div>`;
+                    list.innerHTML += `<div class="glass p-5 flex justify-between items-center border-l-4 border-indigo-600"><div><p class="font-bold text-sm italic">${task.title}</p><p class="text-[10px] text-indigo-400 font-black">+${task.reward} Coins</p></div><button onclick="startAdFlow('${task.reward}', '${task.link}')" class="bg-indigo-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase">Watch</button></div>`;
                 });
             });
         }
 
         window.claimDailyBonus = async () => {
             const today = new Date().toDateString();
-            if(userData.lastBonus === today) return alert("Already claimed!");
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(10), lastBonus: today });
-            alert("10 Coins Added!");
+            if(userData.lastBonusDate === today) return alert("Already claimed!");
+            let streak = (userData.bonusStreak >= 6) ? 1 : (userData.bonusStreak || 0) + 1;
+            const amt = (streak <= 3) ? 50 : 100;
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(amt), lastBonusDate: today, bonusStreak: streak });
+            alert(`Day ${streak}: ${amt} Coins Claimed!`);
         };
 
         window.saveProfile = async () => {
-            const details = {
-                username: document.getElementById('pName').value,
-                pName: document.getElementById('pName').value,
-                pMobile: document.getElementById('pMobile').value,
-                pAcc: document.getElementById('pAcc').value,
-                pIFSC: document.getElementById('pIFSC').value,
-                pBranch: document.getElementById('pBranch').value,
-                pPin: document.getElementById('pPin').value,
-                pGender: document.getElementById('pGender').value,
-                profileDone: true
-            };
-            await updateDoc(doc(db, "users", auth.currentUser.uid), details);
-            alert("Profile Saved!");
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { username: document.getElementById('pName').value, pAcc: document.getElementById('pAcc').value, profileDone: true });
+            alert("Saved!");
         };
 
         window.handleWithdraw = async (amt) => {
             if(userData.coins < amt) return alert("Low balance!");
-            if(!userData.profileDone) return alert("Save Bank Details in Profile first!");
-            const info = `Name: ${userData.pName} | Mob: ${userData.pMobile} | Acc: ${userData.pAcc} | IFSC: ${userData.pIFSC} | Branch: ${userData.pBranch} | Pin: ${userData.pPin}`;
-            await addDoc(collection(db, "withdrawals"), { uid: auth.currentUser.uid, email: userData.email, amt, info, status: "pending", date: new Date().toLocaleString() });
+            if(!userData.profileDone) return alert("Save Profile first!");
+            await addDoc(collection(db, "withdrawals"), { uid: auth.currentUser.uid, amt, status: "pending", date: new Date().toLocaleString() });
             await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(-amt) });
-            alert("Withdrawal Requested!");
+            alert("Requested!");
         };
 
         window.handleAuth = async () => {
             const e = document.getElementById('email').value, p = document.getElementById('pass').value, u = document.getElementById('username').value;
             try {
                 const r = await createUserWithEmailAndPassword(auth, e, p);
-                await setDoc(doc(db, "users", r.user.uid), { username: u, email: e, coins: 100, profileDone: false, lastBonus: "" });
-            } catch(err) { signInWithEmailAndPassword(auth, e, p).catch(e => alert(e.message)); }
+                await setDoc(doc(db, "users", r.user.uid), { username: u, email: e, coins: 100, bonusStreak: 0 });
+            } catch { signInWithEmailAndPassword(auth, e, p).catch(err => alert(err.message)); }
         };
 
         window.switchTab = (id) => { document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); };
