@@ -36,8 +36,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="card border-yellow-600/30">
                 <h3 class="font-bold mb-4 text-yellow-500 uppercase flex items-center gap-2">📢 Main Ad Management</h3>
-                <input type="text" id="adURL" placeholder="Paste Ad Link" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 outline-none">
-                <input type="number" id="adReward" placeholder="Reward Amount" class="w-full bg-black p-3 rounded-xl mb-4 border border-slate-800 outline-none">
+                <input type="text" id="adURL" placeholder="Paste Ad Link" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 outline-none text-white">
+                <input type="number" id="adReward" placeholder="Reward Amount" class="w-full bg-black p-3 rounded-xl mb-4 border border-slate-800 outline-none text-white">
                 <div class="flex gap-2">
                     <button onclick="saveAd()" class="flex-1 bg-yellow-600 p-3 rounded-xl font-bold text-black uppercase">Update Ad</button>
                     <button onclick="removeAd()" class="bg-red-600/20 text-red-500 px-4 rounded-xl font-bold uppercase text-[10px]">Remove</button>
@@ -46,9 +46,9 @@
 
             <div class="card">
                 <h3 class="font-bold mb-4 text-indigo-400 uppercase">➕ Add New Task</h3>
-                <input type="text" id="tTitle" placeholder="Task Name" class="w-full bg-black p-3 rounded-xl mb-2 outline-none border border-slate-800">
-                <input type="number" id="tReward" placeholder="Reward Coins" class="w-full bg-black p-3 rounded-xl mb-2 outline-none border border-slate-800">
-                <input type="text" id="tLink" placeholder="Task Link" class="w-full bg-black p-3 rounded-xl mb-4 outline-none border border-slate-800">
+                <input type="text" id="tTitle" placeholder="Task Name" class="w-full bg-black p-3 rounded-xl mb-2 outline-none border border-slate-800 text-white">
+                <input type="number" id="tReward" placeholder="Reward Coins" class="w-full bg-black p-3 rounded-xl mb-2 outline-none border border-slate-800 text-white">
+                <input type="text" id="tLink" placeholder="Task Link" class="w-full bg-black p-3 rounded-xl mb-4 outline-none border border-slate-800 text-white">
                 <button onclick="addTask()" class="w-full bg-indigo-600 p-3 rounded-xl font-bold uppercase">Publish Task</button>
             </div>
 
@@ -61,8 +61,7 @@
 
             <div class="card border-red-600/20">
                 <h3 class="font-bold mb-4 text-red-500 uppercase">🗑️ Manage Active Tasks</h3>
-                <div id="adminTaskList" class="space-y-3">
-                    </div>
+                <div id="adminTaskList" class="space-y-3"></div>
             </div>
         </div>
     </div>
@@ -83,7 +82,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- Ad Controls ---
         window.saveAd = async () => {
             const link = document.getElementById('adURL').value;
             const reward = parseInt(document.getElementById('adReward').value);
@@ -99,7 +97,6 @@
             }
         };
 
-        // --- Task Controls ---
         window.addTask = async () => {
             const title = document.getElementById('tTitle').value;
             const reward = parseInt(document.getElementById('tReward').value);
@@ -118,9 +115,7 @@
             }
         };
 
-        // --- Realtime Sync ---
         function sync() {
-            // Task List Sync with Delete Buttons
             onSnapshot(collection(db, "tasks"), (s) => {
                 const list = document.getElementById('adminTaskList');
                 list.innerHTML = "";
@@ -137,7 +132,6 @@
                 });
             });
 
-            // Pending Payouts Sync
             onSnapshot(collection(db, "withdrawals"), (s) => {
                 const list = document.getElementById('quickPayouts');
                 list.innerHTML = "";
@@ -147,7 +141,7 @@
                         list.innerHTML += `
                             <div class="bg-black/40 p-3 rounded-xl border border-slate-800">
                                 <p class="text-green-400 font-black">₹${data.amt/100}</p>
-                                <p class="text-slate-500 text-[9px] truncate">${data.email}</p>
+                                <p class="text-slate-500 text-[9px] truncate">${data.username || 'No Name'}</p>
                                 <button onclick="approve('${d.id}')" class="w-full mt-2 bg-green-600 py-1 rounded-lg text-[10px] font-bold uppercase">Mark Paid</button>
                             </div>`;
                     }
@@ -160,7 +154,6 @@
             alert("Marked as Paid!");
         };
 
-        // --- Full Data View ---
         window.showData = async (type) => {
             const modal = document.getElementById('dataModal');
             const content = document.getElementById('modalContent');
@@ -171,16 +164,22 @@
             let html = "<table class='data-table'><thead><tr>";
             
             if (type === 'users') {
-                html += "<th>Name</th><th>Coins</th><th>Details</th></tr></thead><tbody>";
+                // Referral aur Bank Details yahan add ho gayi hain
+                html += "<th>User Info</th><th>Bank Details</th><th>Referral</th><th>Gender/Pin</th></tr></thead><tbody>";
                 querySnapshot.forEach((doc) => {
                     const d = doc.data();
-                    html += `<tr><td>${d.username}</td><td>${d.coins}</td><td>Mob: ${d.pMobile || 'N/A'}<br>Pin: ${d.pPin || 'N/A'}</td></tr>`;
+                    html += `<tr>
+                        <td><b>${d.username}</b><br><span class="text-[9px] text-indigo-400">${d.email}</span><br>🪙 ${d.coins}</td>
+                        <td class="text-[10px]">Owner: ${d.pOwner || '-'}<br>A/c: ${d.pAcc || '-'}<br>Branch: ${d.pBranch || '-'}<br>UPI: ${d.pUPI || '-'}</td>
+                        <td class="text-center">Ref By: <br><span class="text-[8px]">${d.referredBy || 'Direct'}</span><br><b>Ads: ${d.referralAdCount || 0}/20</b></td>
+                        <td>Gen: ${d.pGender || '-'}<br>Pin: ${d.pPin || '-'}</td>
+                    </tr>`;
                 });
             } else {
-                html += "<th>Date</th><th>Amount</th><th>Info</th><th>Status</th></tr></thead><tbody>";
+                html += "<th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>";
                 querySnapshot.forEach((doc) => {
                     const d = doc.data();
-                    html += `<tr><td>${d.date}</td><td>₹${d.amt/100}</td><td>${d.info}</td><td>${d.status}</td></tr>`;
+                    html += `<tr><td>${d.date}</td><td>₹${d.amt/100}</td><td>${d.status}</td></tr>`;
                 });
             }
             html += "</tbody></table>";
