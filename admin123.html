@@ -38,10 +38,10 @@
                 <h3 class="font-bold mb-4 text-yellow-500 uppercase flex items-center gap-2">📢 Main Ad Management</h3>
                 <input type="text" id="adURL" placeholder="Paste Ad Link" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 outline-none text-white">
                 <input type="number" id="adReward" placeholder="Reward Amount" class="w-full bg-black p-3 rounded-xl mb-4 border border-slate-800 outline-none text-white">
-                <div class="flex gap-2">
-                    <button onclick="saveAd()" class="flex-1 bg-yellow-600 p-3 rounded-xl font-bold text-black uppercase">Update Ad</button>
-                    <button onclick="removeAd()" class="bg-red-600/20 text-red-500 px-4 rounded-xl font-bold uppercase text-[10px]">Remove</button>
-                </div>
+                <button onclick="saveAd()" class="w-full bg-yellow-600 p-3 rounded-xl font-bold text-black uppercase">Add Main Ad</button>
+                
+                <div id="mainAdsList" class="mt-6 space-y-3">
+                    </div>
             </div>
 
             <div class="card">
@@ -82,21 +82,24 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // --- Main Ad Logic (Now works like Tasks) ---
         window.saveAd = async () => {
             const link = document.getElementById('adURL').value;
             const reward = parseInt(document.getElementById('adReward').value);
             if(!link || !reward) return alert("Details bhariye");
-            await setDoc(doc(db, "settings", "ads"), { link, reward, name: "Main Reward Ad" });
-            alert("Main Ad Updated!");
+            await addDoc(collection(db, "main_ads"), { link, reward });
+            alert("Main Ad Added!");
+            document.getElementById('adURL').value = "";
+            document.getElementById('adReward').value = "";
         };
 
-        window.removeAd = async () => {
-            if(confirm("Kyu bhai? Ad sach mein hatana hai?")) {
-                await deleteDoc(doc(db, "settings", "ads"));
-                alert("Ad Removed!");
+        window.removeAd = async (id) => {
+            if(confirm("Ye Ad delete karu?")) {
+                await deleteDoc(doc(db, "main_ads", id));
             }
         };
 
+        // --- Task Logic ---
         window.addTask = async () => {
             const title = document.getElementById('tTitle').value;
             const reward = parseInt(document.getElementById('tReward').value);
@@ -116,6 +119,24 @@
         };
 
         function sync() {
+            // Sync Main Ads List
+            onSnapshot(collection(db, "main_ads"), (s) => {
+                const list = document.getElementById('mainAdsList');
+                list.innerHTML = "";
+                s.forEach(t => {
+                    const data = t.data();
+                    list.innerHTML += `
+                        <div class="bg-black/40 p-3 rounded-xl flex justify-between items-center border border-slate-800">
+                            <div class="truncate mr-2">
+                                <p class="text-white text-[10px] truncate w-32">${data.link}</p>
+                                <p class="text-yellow-500 text-[9px] font-black">${data.reward} Coins</p>
+                            </div>
+                            <button onclick="removeAd('${t.id}')" class="bg-red-600/20 text-red-500 px-3 py-1 rounded-lg text-[9px] font-bold uppercase hover:bg-red-600 hover:text-white transition">Delete</button>
+                        </div>`;
+                });
+            });
+
+            // Sync Tasks List
             onSnapshot(collection(db, "tasks"), (s) => {
                 const list = document.getElementById('adminTaskList');
                 list.innerHTML = "";
@@ -164,7 +185,6 @@
             let html = "<table class='data-table'><thead><tr>";
             
             if (type === 'users') {
-                // Referral aur Bank Details yahan add ho gayi hain
                 html += "<th>User Info</th><th>Bank Details</th><th>Referral</th><th>Gender/Pin</th></tr></thead><tbody>";
                 querySnapshot.forEach((doc) => {
                     const d = doc.data();
