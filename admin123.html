@@ -26,42 +26,44 @@
 
     <div class="max-w-6xl mx-auto">
         <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-            <h1 class="text-2xl font-black italic uppercase tracking-tighter">EARNIFYX <span class="text-indigo-500 text-sm">CONTROL</span></h1>
+            <h1 class="text-2xl font-black italic uppercase tracking-tighter text-indigo-500">EARNIFYX CONTROL</h1>
             <div class="flex gap-2">
                 <button onclick="showData('users')" class="bg-indigo-600 px-4 py-2 rounded-lg font-bold uppercase text-[10px]">📊 View Users</button>
                 <button onclick="showData('withdrawals')" class="bg-green-600 px-4 py-2 rounded-lg font-bold uppercase text-[10px]">💰 View Payouts</button>
             </div>
         </div>
 
+        <div id="notifStatus" class="mb-6 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-center text-[10px] font-bold uppercase text-indigo-400">
+            🔔 Live Notifications Active
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="card border-green-600/30 md:col-span-2 mb-4">
+                <h3 class="font-bold mb-4 text-green-500 uppercase">💸 Action Needed: Pending Payouts</h3>
+                <div id="pendingActions" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <p class="text-slate-500 italic text-[10px]">Checking for requests...</p>
+                </div>
+            </div>
+
             <div class="card border-yellow-600/30">
-                <h3 class="font-bold mb-4 text-yellow-500 uppercase flex items-center gap-2">📢 Main Ad Management</h3>
-                <input type="text" id="adURL" placeholder="Paste Ad Link" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 outline-none text-white">
-                <input type="number" id="adReward" placeholder="Reward Amount" class="w-full bg-black p-3 rounded-xl mb-4 border border-slate-800 outline-none text-white">
+                <h3 class="font-bold mb-4 text-yellow-500 uppercase">📢 Main Ad Management</h3>
+                <input type="text" id="adURL" placeholder="Paste Ad Link" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 text-white">
+                <input type="number" id="adReward" placeholder="Reward Amount" class="w-full bg-black p-3 rounded-xl mb-4 border border-slate-800 text-white">
                 <button onclick="saveAd()" class="w-full bg-yellow-600 p-3 rounded-xl font-bold text-black uppercase">Add Main Ad</button>
-                
-                <div id="mainAdsList" class="mt-6 space-y-3">
-                    </div>
+                <div id="mainAdsList" class="mt-6 space-y-3"></div>
             </div>
 
             <div class="card">
                 <h3 class="font-bold mb-4 text-indigo-400 uppercase">➕ Add New Task</h3>
-                <input type="text" id="tTitle" placeholder="Task Name" class="w-full bg-black p-3 rounded-xl mb-2 outline-none border border-slate-800 text-white">
-                <input type="number" id="tReward" placeholder="Reward Coins" class="w-full bg-black p-3 rounded-xl mb-2 outline-none border border-slate-800 text-white">
-                <input type="text" id="tLink" placeholder="Task Link" class="w-full bg-black p-3 rounded-xl mb-4 outline-none border border-slate-800 text-white">
+                <input type="text" id="tTitle" placeholder="Task Name" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 text-white">
+                <input type="number" id="tReward" placeholder="Reward Coins" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 text-white">
+                <input type="text" id="tLink" placeholder="Task Link" class="w-full bg-black p-3 rounded-xl mb-4 border border-slate-800 text-white">
                 <button onclick="addTask()" class="w-full bg-indigo-600 p-3 rounded-xl font-bold uppercase">Publish Task</button>
             </div>
 
-            <div class="card border-green-600/20">
-                <h3 class="font-bold mb-4 text-green-500 uppercase">💸 Pending Payouts</h3>
-                <div id="quickPayouts" class="space-y-3">
-                    <p class="text-slate-500 italic text-[10px]">No pending requests...</p>
-                </div>
-            </div>
-
-            <div class="card border-red-600/20">
+            <div class="card border-red-600/20 md:col-span-2">
                 <h3 class="font-bold mb-4 text-red-500 uppercase">🗑️ Manage Active Tasks</h3>
-                <div id="adminTaskList" class="space-y-3"></div>
+                <div id="adminTaskList" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
             </div>
         </div>
     </div>
@@ -82,130 +84,118 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- Main Ad Logic (Now works like Tasks) ---
         window.saveAd = async () => {
-            const link = document.getElementById('adURL').value;
-            const reward = parseInt(document.getElementById('adReward').value);
+            const link = document.getElementById('adURL').value, reward = parseInt(document.getElementById('adReward').value);
             if(!link || !reward) return alert("Details bhariye");
             await addDoc(collection(db, "main_ads"), { link, reward });
             alert("Main Ad Added!");
-            document.getElementById('adURL').value = "";
-            document.getElementById('adReward').value = "";
         };
 
-        window.removeAd = async (id) => {
-            if(confirm("Ye Ad delete karu?")) {
-                await deleteDoc(doc(db, "main_ads", id));
-            }
-        };
-
-        // --- Task Logic ---
+        window.removeAd = async (id) => { if(confirm("Delete Ad?")) await deleteDoc(doc(db, "main_ads", id)); };
+        
         window.addTask = async () => {
-            const title = document.getElementById('tTitle').value;
-            const reward = parseInt(document.getElementById('tReward').value);
-            const link = document.getElementById('tLink').value;
-            if(!title || !reward || !link) return alert("Sari fields bhariye");
+            const title = document.getElementById('tTitle').value, reward = parseInt(document.getElementById('tReward').value), link = document.getElementById('tLink').value;
+            if(!title || !reward || !link) return alert("Fields bhariye");
             await addDoc(collection(db, "tasks"), { title, reward, link });
             alert("Task Published!");
-            document.getElementById('tTitle').value = "";
-            document.getElementById('tReward').value = "";
-            document.getElementById('tLink').value = "";
         };
 
-        window.deleteTask = async (id) => {
-            if(confirm("Ye task delete karu?")) {
-                await deleteDoc(doc(db, "tasks", id));
-            }
-        };
+        window.deleteTask = async (id) => { if(confirm("Delete task?")) await deleteDoc(doc(db, "tasks", id)); };
 
-        function sync() {
-            // Sync Main Ads List
-            onSnapshot(collection(db, "main_ads"), (s) => {
-                const list = document.getElementById('mainAdsList');
-                list.innerHTML = "";
-                s.forEach(t => {
-                    const data = t.data();
-                    list.innerHTML += `
-                        <div class="bg-black/40 p-3 rounded-xl flex justify-between items-center border border-slate-800">
-                            <div class="truncate mr-2">
-                                <p class="text-white text-[10px] truncate w-32">${data.link}</p>
-                                <p class="text-yellow-500 text-[9px] font-black">${data.reward} Coins</p>
-                            </div>
-                            <button onclick="removeAd('${t.id}')" class="bg-red-600/20 text-red-500 px-3 py-1 rounded-lg text-[9px] font-bold uppercase hover:bg-red-600 hover:text-white transition">Delete</button>
-                        </div>`;
-                });
-            });
-
-            // Sync Tasks List
-            onSnapshot(collection(db, "tasks"), (s) => {
-                const list = document.getElementById('adminTaskList');
-                list.innerHTML = "";
-                s.forEach(t => {
-                    const data = t.data();
-                    list.innerHTML += `
-                        <div class="bg-black/40 p-3 rounded-xl flex justify-between items-center border border-slate-800">
-                            <div>
-                                <p class="font-bold text-white text-[11px]">${data.title}</p>
-                                <p class="text-indigo-400 text-[9px] uppercase font-black">+${data.reward} Coins</p>
-                            </div>
-                            <button onclick="deleteTask('${t.id}')" class="bg-red-600/20 text-red-500 px-3 py-1 rounded-lg text-[9px] font-bold uppercase hover:bg-red-600 hover:text-white transition">Delete</button>
-                        </div>`;
-                });
-            });
-
-            onSnapshot(collection(db, "withdrawals"), (s) => {
-                const list = document.getElementById('quickPayouts');
-                list.innerHTML = "";
-                s.forEach(d => {
-                    const data = d.data();
+        // Notification & Action System
+        let firstLoad = true;
+        function listenForPayouts() {
+            onSnapshot(collection(db, "withdrawals"), (snapshot) => {
+                const pendingDiv = document.getElementById('pendingActions');
+                let pendingHTML = "";
+                
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
                     if(data.status === "pending") {
-                        list.innerHTML += `
-                            <div class="bg-black/40 p-3 rounded-xl border border-slate-800">
-                                <p class="text-green-400 font-black">₹${data.amt/100}</p>
-                                <p class="text-slate-500 text-[9px] truncate">${data.username || 'No Name'}</p>
-                                <button onclick="approve('${d.id}')" class="w-full mt-2 bg-green-600 py-1 rounded-lg text-[10px] font-bold uppercase">Mark Paid</button>
+                        pendingHTML += `
+                            <div class="bg-black/40 p-4 rounded-xl border border-green-500/30">
+                                <p class="text-white font-bold">${data.username}</p>
+                                <p class="text-green-400 text-lg font-black">₹${data.amt/100}</p>
+                                <p class="text-[9px] text-slate-400 mb-3">${data.date}</p>
+                                <button onclick="approvePayout('${docSnap.id}')" class="w-full bg-green-600 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-green-500">Mark Paid ✅</button>
                             </div>`;
+                    }
+                });
+
+                pendingDiv.innerHTML = pendingHTML || '<p class="text-slate-500 italic text-[10px]">No pending requests</p>';
+
+                if (firstLoad) { firstLoad = false; return; }
+
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added" && change.doc.data().status === "pending") {
+                        const data = change.doc.data();
+                        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                        audio.play().catch(() => {});
+                        alert(`🚨 NEW PAYOUT REQUEST!\nUser: ${data.username}\nAmount: ₹${data.amt/100}`);
                     }
                 });
             });
         }
 
-        window.approve = async (id) => {
-            await updateDoc(doc(db, "withdrawals", id), { status: "approved" });
-            alert("Marked as Paid!");
+        window.approvePayout = async (id) => {
+            if(confirm("Have you sent the money? Clicking OK will notify the user.")) {
+                await updateDoc(doc(db, "withdrawals", id), { status: "approved" });
+                alert("Payment Marked as Approved!");
+            }
         };
 
-        window.showData = async (type) => {
-            const modal = document.getElementById('dataModal');
-            const content = document.getElementById('modalContent');
-            modal.style.display = "block";
-            content.innerHTML = "Loading...";
+        function sync() {
+            onSnapshot(collection(db, "main_ads"), (s) => {
+                const list = document.getElementById('mainAdsList'); list.innerHTML = "";
+                s.forEach(t => { 
+                    list.innerHTML += `<div class="bg-black/40 p-3 rounded-xl flex justify-between border border-slate-800">
+                        <div><p class="text-white text-[10px] truncate w-32">${t.data().link}</p><p class="text-yellow-500 font-bold text-[9px]">${t.data().reward} Coins</p></div>
+                        <button onclick="removeAd('${t.id}')" class="bg-red-600/20 text-red-500 px-3 py-1 rounded-lg text-[9px] font-bold uppercase">Delete</button>
+                    </div>`; 
+                });
+            });
+            onSnapshot(collection(db, "tasks"), (s) => {
+                const list = document.getElementById('adminTaskList'); list.innerHTML = "";
+                s.forEach(t => { 
+                    list.innerHTML += `<div class="bg-black/40 p-3 rounded-xl flex justify-between border border-slate-800">
+                        <div><p class="font-bold text-white">${t.data().title}</p><p class="text-indigo-400 font-black text-[9px]">+${t.data().reward} Coins</p></div>
+                        <button onclick="deleteTask('${t.id}')" class="bg-red-600/20 text-red-500 px-3 py-1 rounded-lg text-[9px] font-bold uppercase">Delete</button>
+                    </div>`; 
+                });
+            });
+            listenForPayouts();
+        }
 
+        window.showData = async (type) => {
+            const modal = document.getElementById('dataModal'), content = document.getElementById('modalContent');
+            modal.style.display = "block"; content.innerHTML = "Loading...";
             const querySnapshot = await getDocs(collection(db, type));
             let html = "<table class='data-table'><thead><tr>";
             
             if (type === 'users') {
-                html += "<th>User Info</th><th>Bank Details</th><th>Referral</th><th>Gender/Pin</th></tr></thead><tbody>";
-                querySnapshot.forEach((doc) => {
-                    const d = doc.data();
+                html += "<th>User Name</th><th>Coin Balance</th><th>UPI & Pincode</th></tr></thead><tbody>";
+                querySnapshot.forEach((doc) => { 
+                    const d = doc.data(); 
                     html += `<tr>
-                        <td><b>${d.username}</b><br><span class="text-[9px] text-indigo-400">${d.email}</span><br>🪙 ${d.coins}</td>
-                        <td class="text-[10px]">Owner: ${d.pOwner || '-'}<br>A/c: ${d.pAcc || '-'}<br>Branch: ${d.pBranch || '-'}<br>UPI: ${d.pUPI || '-'}</td>
-                        <td class="text-center">Ref By: <br><span class="text-[8px]">${d.referredBy || 'Direct'}</span><br><b>Ads: ${d.referralAdCount || 0}/20</b></td>
-                        <td>Gen: ${d.pGender || '-'}<br>Pin: ${d.pPin || '-'}</td>
-                    </tr>`;
+                        <td><b>${d.username}</b><br><small class="text-indigo-400">${d.email}</small></td>
+                        <td class="text-green-500 font-bold text-sm">🪙 ${d.coins || 0}</td>
+                        <td>UPI: ${d.pUPI || '-'}<br>Pin: ${d.pPin || '-'}</td>
+                    </tr>`; 
                 });
             } else {
-                html += "<th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>";
-                querySnapshot.forEach((doc) => {
-                    const d = doc.data();
-                    html += `<tr><td>${d.date}</td><td>₹${d.amt/100}</td><td>${d.status}</td></tr>`;
+                html += "<th>User Name</th><th>Amount (₹)</th><th>Status</th><th>Date</th></tr></thead><tbody>";
+                querySnapshot.forEach((doc) => { 
+                    const d = doc.data(); 
+                    html += `<tr>
+                        <td>${d.username}</td>
+                        <td><b class="text-green-500">₹${d.amt/100}</b><br><small class="text-slate-500">${d.amt} coins</small></td>
+                        <td class="font-bold uppercase">${d.status}</td>
+                        <td>${d.date}</td>
+                    </tr>`; 
                 });
             }
-            html += "</tbody></table>";
-            content.innerHTML = html;
+            content.innerHTML = html + "</tbody></table>";
         };
-
         sync();
     </script>
 </body>
