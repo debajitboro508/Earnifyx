@@ -102,7 +102,6 @@
 
         window.deleteTask = async (id) => { if(confirm("Delete task?")) await deleteDoc(doc(db, "tasks", id)); };
 
-        // Notification & Action System
         let firstLoad = true;
         function listenForPayouts() {
             onSnapshot(collection(db, "withdrawals"), (snapshot) => {
@@ -173,12 +172,16 @@
             let html = "<table class='data-table'><thead><tr>";
             
             if (type === 'users') {
-                html += "<th>User Name</th><th>Coin Balance</th><th>UPI & Pincode</th></tr></thead><tbody>";
+                // FIXED: Added "Ads Watched" to check referral status
+                html += "<th>User Info</th><th>Balance</th><th>Ads Watched</th><th>Payment Info</th></tr></thead><tbody>";
                 querySnapshot.forEach((doc) => { 
                     const d = doc.data(); 
                     html += `<tr>
-                        <td><b>${d.username}</b><br><small class="text-indigo-400">${d.email}</small></td>
-                        <td class="text-green-500 font-bold text-sm">🪙 ${d.coins || 0}</td>
+                        <td><b>${d.username}</b><br><small>${d.email}</small></td>
+                        <td class="text-green-500 font-bold">🪙 ${d.coins || 0}</td>
+                        <td class="text-center font-bold ${d.totalAdsWatched >= 10 ? 'text-green-500' : 'text-yellow-500'}">
+                            ${d.totalAdsWatched || 0}/10
+                        </td>
                         <td>UPI: ${d.pUPI || '-'}<br>Pin: ${d.pPin || '-'}</td>
                     </tr>`; 
                 });
@@ -186,12 +189,7 @@
                 html += "<th>User Name</th><th>Amount (₹)</th><th>Status</th><th>Date</th></tr></thead><tbody>";
                 querySnapshot.forEach((doc) => { 
                     const d = doc.data(); 
-                    html += `<tr>
-                        <td>${d.username}</td>
-                        <td><b class="text-green-500">₹${d.amt/100}</b><br><small class="text-slate-500">${d.amt} coins</small></td>
-                        <td class="font-bold uppercase">${d.status}</td>
-                        <td>${d.date}</td>
-                    </tr>`; 
+                    html += `<tr><td>${d.username}</td><td><b class="text-green-500">₹${d.amt/100}</b></td><td class="font-bold uppercase">${d.status}</td><td>${d.date}</td></tr>`; 
                 });
             }
             content.innerHTML = html + "</tbody></table>";
