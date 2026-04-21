@@ -3,74 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earnifyx Admin | Control</title>
+    <title>Earnifyx Admin | Ultimate Sync</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background: #020617; color: white; min-height: 100vh; font-size: 12px; font-family: 'Outfit', sans-serif; }
-        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        body { background: #020617; color: white; min-height: 100vh; font-size: 11px; font-family: 'Outfit', sans-serif; }
+        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 20px; }
+        .admin-input { background: #000; border: 1px solid #1e293b; color: white; padding: 12px; border-radius: 12px; width: 100%; margin-bottom: 10px; outline: none; }
+        .stat-card { background: linear-gradient(145deg, #1e1b4b, #0f172a); border: 1px solid #312e81; padding: 15px; border-radius: 15px; text-align: center; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 100; overflow-y: auto; padding: 20px; }
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .data-table th, .data-table td { border: 1px solid #1e293b; padding: 10px; text-align: left; }
-        .data-table th { background: #1e1b4b; color: #818cf8; text-transform: uppercase; font-size: 10px; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; overflow-y: auto; padding: 20px; }
-        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 24px; }
+        .btn-single-del { background: #ef4444; color: white; padding: 5px 12px; border-radius: 8px; font-weight: 900; text-transform: uppercase; font-size: 10px; transition: 0.3s; }
     </style>
 </head>
 <body class="p-6">
 
     <div id="dataModal" class="modal">
-        <div class="flex justify-between items-center mb-4">
-            <h2 id="modalTitle" class="text-xl font-bold text-indigo-400 italic">Data View</h2>
-            <button onclick="document.getElementById('dataModal').style.display='none'" class="bg-red-600 px-4 py-1 rounded font-bold">CLOSE</button>
+        <div class="flex justify-between items-center mb-6">
+            <h2 id="modalTitle" class="text-2xl font-black text-indigo-400 uppercase italic">Admin Database</h2>
+            <button onclick="document.getElementById('dataModal').style.display='none'" class="bg-white text-black px-6 py-2 rounded-full font-black">CLOSE</button>
         </div>
-        <div id="modalContent" class="overflow-x-auto"></div>
+        <div id="modalContent" class="overflow-x-auto p-4"></div>
     </div>
 
-    <div class="max-w-6xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-            <h1 class="text-2xl font-black italic uppercase tracking-tighter text-indigo-500">EARNIFYX CONTROL</h1>
-            <div class="flex gap-2">
-                <button onclick="showData('users')" class="bg-indigo-600 px-4 py-2 rounded-lg font-bold uppercase text-[10px]">📊 View Users</button>
-                <button onclick="showData('withdrawals')" class="bg-green-600 px-4 py-2 rounded-lg font-bold uppercase text-[10px]">💰 View Payouts</button>
+    <div class="max-w-7xl mx-auto">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
+            <div>
+                <h1 class="text-4xl font-black italic uppercase text-indigo-500">EARNIFYX <span class="text-white">ADMIN</span></h1>
+                <p class="text-slate-500 font-bold text-[9px] uppercase tracking-[4px]">Smart Sync Active | All Folders Scanned</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="showData('users')" class="bg-indigo-600 px-4 py-2 rounded-xl font-bold uppercase">Users List</button>
+                <button onclick="showData('withdrawals')" class="bg-green-600 px-4 py-2 rounded-xl font-bold uppercase">Payouts</button>
+                <button onclick="toggleMaintenance()" id="maintBtn" class="bg-slate-700 px-4 py-2 rounded-xl font-bold uppercase italic">Maint: OFF</button>
+            </div>
+        </header>
+
+        <div class="card border-indigo-500/30 mb-8">
+            <h3 class="font-black mb-3 text-indigo-400 uppercase italic">📢 Global Headline (Notice)</h3>
+            <div class="flex gap-3">
+                <input type="text" id="globalNotice" placeholder="Headline for users..." class="admin-input mb-0">
+                <button onclick="updateNotice()" class="bg-indigo-600 px-8 rounded-xl font-black uppercase">Publish</button>
             </div>
         </div>
 
-        <div id="notifStatus" class="mb-6 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-center text-[10px] font-bold uppercase text-indigo-400">
-            🔔 Live Notifications Active
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="stat-card border-l-4 border-indigo-500"><p class="text-slate-400 text-[9px] uppercase">Total Users</p><h3 id="statTotalUsers" class="text-xl font-black">---</h3></div>
+            <div class="stat-card border-l-4 border-green-500"><p class="text-slate-400 text-[9px] uppercase">Pending Pay</p><h3 id="statPendingPay" class="text-xl font-black text-green-400">---</h3></div>
+            <div class="stat-card border-l-4 border-yellow-500"><p class="text-slate-400 text-[9px] uppercase">Active Ads</p><h3 id="statTasksCount" class="text-xl font-black text-yellow-500">---</h3></div>
+            <div class="stat-card border-l-4 border-red-500"><p class="text-slate-400 text-[9px] uppercase">Banned</p><h3 id="statBanned" class="text-xl font-black text-red-500">---</h3></div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="card border-green-600/30 md:col-span-2 mb-4">
-                <h3 class="font-bold mb-4 text-green-500 uppercase">💸 Action Needed: Pending Payouts</h3>
-                <div id="pendingActions" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <p class="text-slate-500 italic text-[10px]">Checking for requests...</p>
-                </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="card border-yellow-500/20">
+                <h3 class="font-black mb-4 text-yellow-500 uppercase italic">📢 Premium Ads (Fixed 3m)</h3>
+                <input type="text" id="adURL" placeholder="Smartlink URL" class="admin-input">
+                <input type="number" id="adReward" placeholder="Reward CR" class="admin-input">
+                <button onclick="saveAd()" class="w-full bg-yellow-600 p-3 rounded-xl font-black text-black uppercase mb-6">Publish Ad</button>
+                
+                <h4 class="text-[10px] font-black text-slate-500 uppercase mb-3 border-b border-white/5 pb-1">Individual Remove Ads:</h4>
+                <div id="mainAdsList" class="space-y-3 bg-black/30 p-4 rounded-xl min-h-[50px]"></div>
             </div>
 
-            <div class="card border-yellow-600/30">
-                <h3 class="font-bold mb-4 text-yellow-500 uppercase">📢 Main Ad Management</h3>
-                <input type="text" id="adURL" placeholder="Paste Ad Link" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 text-white">
-                <input type="number" id="adReward" placeholder="Reward Amount" class="w-full bg-black p-3 rounded-xl mb-4 border border-slate-800 text-white">
-                <button onclick="saveAd()" class="w-full bg-yellow-600 p-3 rounded-xl font-bold text-black uppercase">Add Main Ad</button>
-                <div id="mainAdsList" class="mt-6 space-y-3"></div>
+            <div class="card border-indigo-500/20">
+                <h3 class="font-black mb-4 text-indigo-400 uppercase italic">➕ Standard Tasks</h3>
+                <input type="text" id="tTitle" placeholder="Task Name (Title)" class="admin-input">
+                <input type="number" id="tReward" placeholder="Reward CR" class="admin-input">
+                <input type="text" id="tLink" placeholder="Task Link" class="admin-input">
+                <button onclick="addTask()" class="w-full bg-indigo-600 p-3 rounded-xl font-black uppercase mb-6">Publish Task</button>
+                
+                <h4 class="text-[10px] font-black text-slate-500 uppercase mb-3 border-b border-white/5 pb-1">Individual Remove Tasks:</h4>
+                <div id="adminTaskList" class="space-y-3 bg-black/30 p-4 rounded-xl min-h-[50px]"></div>
             </div>
+        </div>
 
-            <div class="card">
-                <h3 class="font-bold mb-4 text-indigo-400 uppercase">➕ Add New Task</h3>
-                <input type="text" id="tTitle" placeholder="Task Name" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 text-white">
-                <input type="number" id="tReward" placeholder="Reward Coins" class="w-full bg-black p-3 rounded-xl mb-2 border border-slate-800 text-white">
-                <input type="text" id="tLink" placeholder="Task Link" class="w-full bg-black p-3 rounded-xl mb-4 border border-slate-800 text-white">
-                <button onclick="addTask()" class="w-full bg-indigo-600 p-3 rounded-xl font-bold uppercase">Publish Task</button>
-            </div>
-
-            <div class="card border-red-600/20 md:col-span-2">
-                <h3 class="font-bold mb-4 text-red-500 uppercase">🗑️ Manage Active Tasks</h3>
-                <div id="adminTaskList" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
-            </div>
+        <div class="card border-green-500/20">
+            <h3 class="font-black mb-4 text-green-500 uppercase italic text-center">💸 Payout Requests</h3>
+            <div id="pendingActions" class="grid grid-cols-1 md:grid-cols-3 gap-4">Scanning...</div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, deleteDoc, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, collection, addDoc, deleteDoc, updateDoc, getDocs, setDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDZ8MsMjt-dhXjY-fyYYtOs-X6UmvLAV3I",
@@ -84,116 +100,87 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        window.saveAd = async () => {
-            const link = document.getElementById('adURL').value, reward = parseInt(document.getElementById('adReward').value);
-            if(!link || !reward) return alert("Details bhariye");
-            await addDoc(collection(db, "main_ads"), { link, reward });
-            alert("Main Ad Added!");
-        };
-
-        window.removeAd = async (id) => { if(confirm("Delete Ad?")) await deleteDoc(doc(db, "main_ads", id)); };
+        // Core Functions
+        window.updateNotice = async () => { await setDoc(doc(db, "settings", "config"), { notice: document.getElementById('globalNotice').value }, { merge: true }); alert("Updated!"); };
+        window.toggleMaintenance = async () => { const cur = document.getElementById('maintBtn').innerText.includes("OFF"); await setDoc(doc(db, "settings", "config"), { maintenance: cur }, { merge: true }); };
+        window.toggleBan = async (uid, s) => { if(confirm("Change Status?")) await updateDoc(doc(db, "users", uid), { isBlocked: !s }); showData('users'); };
+        window.editCoins = async (uid, c) => { const n = prompt("New Coins:", c); if(n) await updateDoc(doc(db, "users", uid), { coins: parseInt(n) }); showData('users'); };
         
-        window.addTask = async () => {
-            const title = document.getElementById('tTitle').value, reward = parseInt(document.getElementById('tReward').value), link = document.getElementById('tLink').value;
-            if(!title || !reward || !link) return alert("Fields bhariye");
-            await addDoc(collection(db, "tasks"), { title, reward, link });
-            alert("Task Published!");
-        };
+        // Data Save with specific names
+        window.saveAd = async () => { await addDoc(collection(db, "main_ads"), { link: document.getElementById('adURL').value, reward: parseInt(document.getElementById('adReward').value), type: 'premium', date: new Date().getTime() }); document.getElementById('adURL').value=""; };
+        window.addTask = async () => { await addDoc(collection(db, "tasks"), { title: document.getElementById('tTitle').value, reward: parseInt(document.getElementById('tReward').value), link: document.getElementById('tLink').value, type: 'task', date: new Date().getTime() }); document.getElementById('tTitle').value=""; };
 
-        window.deleteTask = async (id) => { if(confirm("Delete task?")) await deleteDoc(doc(db, "tasks", id)); };
+        // REMOVE LOGIC
+        window.removeAd = async (id) => { if(confirm("Delete Ad?")) await deleteDoc(doc(db, "main_ads", id)); };
+        window.deleteTask = async (id, collName) => { if(confirm("Delete Task?")) await deleteDoc(doc(db, collName, id)); };
+        window.approvePayout = async (id) => { if(confirm("Paid?")) await updateDoc(doc(db, "withdrawals", id), { status: "approved" }); };
 
-        let firstLoad = true;
-        function listenForPayouts() {
-            onSnapshot(collection(db, "withdrawals"), (snapshot) => {
-                const pendingDiv = document.getElementById('pendingActions');
-                let pendingHTML = "";
-                
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    if(data.status === "pending") {
-                        pendingHTML += `
-                            <div class="bg-black/40 p-4 rounded-xl border border-green-500/30">
-                                <p class="text-white font-bold">${data.username}</p>
-                                <p class="text-green-400 text-lg font-black">₹${data.amt/100}</p>
-                                <p class="text-[9px] text-slate-400 mb-3">${data.date}</p>
-                                <button onclick="approvePayout('${docSnap.id}')" class="w-full bg-green-600 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-green-500">Mark Paid ✅</button>
-                            </div>`;
-                    }
-                });
-
-                pendingDiv.innerHTML = pendingHTML || '<p class="text-slate-500 italic text-[10px]">No pending requests</p>';
-
-                if (firstLoad) { firstLoad = false; return; }
-
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added" && change.doc.data().status === "pending") {
-                        const data = change.doc.data();
-                        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                        audio.play().catch(() => {});
-                        alert(`🚨 NEW PAYOUT REQUEST!\nUser: ${data.username}\nAmount: ₹${data.amt/100}`);
-                    }
-                });
-            });
-        }
-
-        window.approvePayout = async (id) => {
-            if(confirm("Have you sent the money? Clicking OK will notify the user.")) {
-                await updateDoc(doc(db, "withdrawals", id), { status: "approved" });
-                alert("Payment Marked as Approved!");
-            }
-        };
-
+        // --- SMART SYNC LOGIC ---
         function sync() {
+            // Stats (Sync from "users" and "Users")
+            onSnapshot(collection(db, "users"), s => document.getElementById('statTotalUsers').innerText = s.size);
+            
+            onSnapshot(doc(db, "settings", "config"), (d) => { if(d.exists()) {
+                document.getElementById('globalNotice').value = d.data().notice || "";
+                document.getElementById('maintBtn').innerText = "Maint: " + (d.data().maintenance ? "ON" : "OFF");
+                document.getElementById('maintBtn').className = d.data().maintenance ? "bg-red-600 px-4 py-2 rounded-xl font-bold uppercase" : "bg-slate-700 px-4 py-2 rounded-xl font-bold uppercase";
+            }});
+
+            // ADS SYNC
             onSnapshot(collection(db, "main_ads"), (s) => {
-                const list = document.getElementById('mainAdsList'); list.innerHTML = "";
+                const list = document.getElementById('mainAdsList');
+                document.getElementById('statTasksCount').innerText = s.size;
+                list.innerHTML = s.empty ? "<p class='text-slate-600 italic'>No ads.</p>" : "";
                 s.forEach(t => { 
-                    list.innerHTML += `<div class="bg-black/40 p-3 rounded-xl flex justify-between border border-slate-800">
-                        <div><p class="text-white text-[10px] truncate w-32">${t.data().link}</p><p class="text-yellow-500 font-bold text-[9px]">${t.data().reward} Coins</p></div>
-                        <button onclick="removeAd('${t.id}')" class="bg-red-600/20 text-red-500 px-3 py-1 rounded-lg text-[9px] font-bold uppercase">Delete</button>
+                    list.innerHTML += `<div class="bg-black/60 p-3 rounded-xl flex justify-between items-center border border-slate-800">
+                        <p class="text-yellow-500 font-bold uppercase truncate w-32">${t.data().link}</p>
+                        <button onclick="removeAd('${t.id}')" class="btn-single-del">DEL</button>
                     </div>`; 
                 });
             });
-            onSnapshot(collection(db, "tasks"), (s) => {
-                const list = document.getElementById('adminTaskList'); list.innerHTML = "";
-                s.forEach(t => { 
-                    list.innerHTML += `<div class="bg-black/40 p-3 rounded-xl flex justify-between border border-slate-800">
-                        <div><p class="font-bold text-white">${t.data().title}</p><p class="text-indigo-400 font-black text-[9px]">+${t.data().reward} Coins</p></div>
-                        <button onclick="deleteTask('${t.id}')" class="bg-red-600/20 text-red-500 px-3 py-1 rounded-lg text-[9px] font-bold uppercase">Delete</button>
-                    </div>`; 
+
+            // TASKS SYNC (Checks both 'tasks' and 'Tasks')
+            const taskLists = ['tasks', 'Tasks'];
+            taskLists.forEach(coll => {
+                onSnapshot(collection(db, coll), (s) => {
+                    const list = document.getElementById('adminTaskList');
+                    if(coll === 'tasks') list.innerHTML = ""; // Pehle reset karo
+                    s.forEach(t => { 
+                        list.innerHTML += `<div class="bg-black/60 p-3 rounded-xl flex justify-between items-center border border-slate-800 mt-2">
+                            <p class="text-indigo-400 font-black uppercase truncate w-32">${t.data().title || 'Untitled'}</p>
+                            <button onclick="deleteTask('${t.id}', '${coll}')" class="btn-single-del">DEL</button>
+                        </div>`; 
+                    });
                 });
             });
-            listenForPayouts();
+
+            onSnapshot(collection(db, "withdrawals"), s => {
+                const pDiv = document.getElementById('pendingActions'); let html = "", count = 0;
+                s.forEach(d => { if(d.data().status === "pending"){ count++; html += `<div class="bg-black/40 p-4 rounded-xl border border-green-500/30 text-center"><p class="text-white uppercase truncate text-[10px] font-bold">${d.data().username}</p><p class="text-green-400 text-lg font-black">₹${d.data().amt/100}</p><button onclick="approvePayout('${d.id}')" class="w-full bg-green-600 py-2 rounded-lg text-black font-black mt-2 text-[10px]">PAID ✅</button></div>`; }});
+                pDiv.innerHTML = html || '<p class="text-slate-500 italic">No requests</p>';
+                document.getElementById('statPendingPay').innerText = count;
+            });
         }
 
         window.showData = async (type) => {
             const modal = document.getElementById('dataModal'), content = document.getElementById('modalContent');
-            modal.style.display = "block"; content.innerHTML = "Loading...";
-            const querySnapshot = await getDocs(collection(db, type));
+            modal.style.display = "block"; content.innerHTML = "Syncing...";
+            const colls = type === 'users' ? ['users', 'Users'] : [type];
             let html = "<table class='data-table'><thead><tr>";
-            
             if (type === 'users') {
-                // FIXED: Added "Ads Watched" to check referral status
-                html += "<th>User Info</th><th>Balance</th><th>Ads Watched</th><th>Payment Info</th></tr></thead><tbody>";
-                querySnapshot.forEach((doc) => { 
-                    const d = doc.data(); 
-                    html += `<tr>
-                        <td><b>${d.username}</b><br><small>${d.email}</small></td>
-                        <td class="text-green-500 font-bold">🪙 ${d.coins || 0}</td>
-                        <td class="text-center font-bold ${d.totalAdsWatched >= 10 ? 'text-green-500' : 'text-yellow-500'}">
-                            ${d.totalAdsWatched || 0}/10
-                        </td>
-                        <td>UPI: ${d.pUPI || '-'}<br>Pin: ${d.pPin || '-'}</td>
-                    </tr>`; 
-                });
+                html += "<th>User Info</th><th>Coins</th><th>Ref Status</th><th>Action</th></tr></thead><tbody>";
+                for(let coll of colls) {
+                    const snap = await getDocs(collection(db, coll));
+                    snap.forEach(d => { const dta = d.data(); html += `<tr><td><b>${dta.username}</b><br>${dta.email}</td><td class="text-green-500 font-black">${dta.coins || 0}</td><td>${dta.totalAdsWatched || 0}/10</td><td><button onclick="editCoins('${d.id}', ${dta.coins || 0})" class="bg-indigo-600 px-2 py-1 rounded mr-1">EDIT</button><button onclick="toggleBan('${d.id}', ${dta.isBlocked || false})" class="bg-red-600 px-2 py-1 rounded">BAN</button></td></tr>`; });
+                }
             } else {
-                html += "<th>User Name</th><th>Amount (₹)</th><th>Status</th><th>Date</th></tr></thead><tbody>";
-                querySnapshot.forEach((doc) => { 
-                    const d = doc.data(); 
-                    html += `<tr><td>${d.username}</td><td><b class="text-green-500">₹${d.amt/100}</b></td><td class="font-bold uppercase">${d.status}</td><td>${d.date}</td></tr>`; 
-                });
+                const wSnap = await getDocs(collection(db, "withdrawals"));
+                html += "<th>Username</th><th>Amount</th><th>Status</th></tr></thead><tbody>";
+                wSnap.forEach(d => { html += `<tr><td>${d.data().username}</td><td>₹${d.data().amt/100}</td><td class="font-bold uppercase">${d.data().status}</td></tr>`; });
             }
             content.innerHTML = html + "</tbody></table>";
         };
+
         sync();
     </script>
 </body>
