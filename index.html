@@ -23,12 +23,13 @@
         .nav-active { color: #6366f1; transform: translateY(-3px); }
         #adWrapper { display: none; position: fixed; inset: 0; background: #000; z-index: 99999; flex-direction: column; }
         #adWrapper.active { display: flex; }
-        .close-x { background: #ef4444; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; border: 4px solid #7f1d1d; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
+        .close-x { background: #ef4444; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; border: 4px solid #7f1d1d; }
+        
+        /* ADS KO NISE (BOTTOM) RAKHNE KA FIX */
+        .bottom-ad-fix { position: fixed; bottom: 80px; left: 0; right: 0; z-index: 40; display: flex; justify-content: center; background: rgba(2, 6, 23, 0.8); padding: 5px; backdrop-blur: md; }
     </style>
 </head>
-<body class="pb-40">
-
-    <div id="adWrapper">
+<body class="pb-60"> <div id="adWrapper">
         <div class="bg-slate-900 p-4 flex justify-between items-center border-b border-white/10">
             <div class="flex flex-col">
                 <span class="text-[10px] font-black text-indigo-400 uppercase italic">Verification Node</span>
@@ -39,61 +40,39 @@
         <iframe id="adIframe" class="flex-grow w-full border-none bg-white"></iframe>
     </div>
 
-    <div id="authScreen" class="flex flex-col justify-center min-h-screen p-8 max-w-md mx-auto text-center">
-        <div class="p-8 glass">
-            <h1 class="text-5xl font-black italic mb-2 text-indigo-500 uppercase">Earnifyx</h1>
-            <p class="text-[10px] text-slate-500 font-bold tracking-[4px] mb-10 uppercase italic">Digital Empire</p>
-            <div class="space-y-4">
-                <input type="text" id="username" placeholder="Full Name" class="simple-input">
-                <input type="email" id="email" placeholder="Email Address" class="simple-input">
-                <input type="password" id="pass" placeholder="Password" class="simple-input">
-            </div>
-            <button onclick="handleAuth()" class="w-full bg-indigo-600 p-4 rounded-2xl font-black uppercase text-xs mt-8">Initialize</button>
-        </div>
-    </div>
-
-    <div id="mainApp" class="hidden">
+    <div id="mainApp">
         <header class="p-8 flex justify-between items-center border-b border-white/5 sticky top-0 bg-black/50 backdrop-blur-md z-50">
-            <div><h2 id="welcomeUser" class="text-xl font-black italic">---</h2><div id="rankBadge" class="text-[9px] font-bold text-indigo-400 uppercase mt-1 italic">Rank: Bronze</div></div>
+            <div><h2 id="welcomeUser" class="text-xl font-black italic">---</h2><div class="text-[9px] font-bold text-indigo-400 uppercase mt-1 italic">Rank: Bronze</div></div>
             <div class="glass px-5 py-2 border-indigo-500/30 text-right"><p class="text-[9px] font-bold text-indigo-400 uppercase">Vault</p><span id="balance" class="text-xl font-black text-white">0</span></div>
         </header>
 
         <div id="home" class="tab-content active p-6 space-y-4 max-w-lg mx-auto">
-            
             <div class="glass p-5 border-l-4 border-indigo-500 flex justify-between items-center bg-indigo-500/5">
                 <p class="font-black text-sm text-indigo-400 italic uppercase">Daily 40 Ads Target</p>
-                <p id="dailyAdProgress" class="text-xl font-black text-white">0/40</p>
-            </div>
-
-            <div class="glass p-5 border-l-4 border-green-500 flex justify-between items-center bg-green-500/5">
-                <div><p class="font-bold text-sm text-green-400 italic uppercase">Daily Bonus</p><p class="text-[10px] text-slate-400 uppercase">Collect 50 CR</p></div>
-                <button onclick="claimDailyBonus()" class="bg-green-600 text-black px-5 py-2 rounded-xl text-[10px] font-black uppercase italic">Claim</button>
+                <p class="text-xl font-black text-white">0/40</p>
             </div>
             
             <div id="taskList" class="grid grid-cols-1 gap-4"></div>
-
-            <div class="flex justify-center mt-10">
-                <script type="text/javascript">
-                  atOptions = { 'key' : '2783e5b5e9656ec03b87289848eba5e4', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
-                </script>
-                <script type="text/javascript" src="https://www.highperformanceformat.com/2783e5b5e9656ec03b87289848eba5e4/invoke.js"></script>
-            </div>
         </div>
-
-        <div id="leaderboard" class="tab-content p-6">...Leaderboard Content...</div>
-        <div id="wallet" class="tab-content p-6 text-center">...Wallet Content...</div>
     </div>
 
-    <nav id="navBar" class="hidden fixed bottom-6 left-6 right-6 glass bg-black/90 border-white/10 p-5 flex justify-around items-center z-50 backdrop-blur-xl">
-        <button onclick="switchTab('home')" id="btn-home" class="nav-btn nav-active">HOME</button>
-        <button onclick="switchTab('leaderboard')" id="btn-leaderboard" class="nav-btn">RANK</button>
-        <button onclick="switchTab('wallet')" id="btn-wallet" class="nav-btn">WALLET</button>
+    <div class="bottom-ad-fix">
+        <script type="text/javascript">
+          atOptions = { 'key' : '2783e5b5e9656ec03b87289848eba5e4', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
+        </script>
+        <script type="text/javascript" src="https://www.highperformanceformat.com/2783e5b5e9656ec03b87289848eba5e4/invoke.js"></script>
+    </div>
+
+    <nav id="navBar" class="fixed bottom-4 left-6 right-6 glass bg-black/90 border-white/10 p-5 flex justify-around items-center z-50 backdrop-blur-xl">
+        <button class="nav-btn nav-active">HOME</button>
+        <button class="nav-btn">RANK</button>
+        <button class="nav-btn">WALLET</button>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, collection, getDocs, query, orderBy, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, collection, getDocs, increment, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDZ8MsMjt-dhXjY-fyYYtOs-X6UmvLAV3I",
@@ -110,7 +89,7 @@
 
         let userData = {}, activeReward = 0, activeTaskId = "", currentTimer = null;
 
-        onAuthStateChanged(auth, (u) => { if(u){ sync(u.uid); document.getElementById('authScreen').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden'); document.getElementById('navBar').classList.remove('hidden'); } });
+        onAuthStateChanged(auth, (u) => { if(u){ sync(u.uid); } });
 
         function sync(uid) {
             onSnapshot(doc(db, "users", uid), (d) => {
@@ -118,20 +97,18 @@
                     userData = d.data();
                     document.getElementById('balance').innerText = userData.coins || 0;
                     document.getElementById('welcomeUser').innerText = userData.username;
-                    renderAllTasks(); // SARI ADS LOAD KAREGA
+                    renderAll();
                 }
             });
         }
 
-        async function renderAllTasks() {
+        async function renderAll() {
             const list = document.getElementById('taskList'), today = new Date().toDateString(), logs = userData.taskLogs?.[today] || {};
             let html = "";
             
-            // ADMIN PANEL KI SARI ADS FETCH KARNA (NO LIMIT)
+            // ADMIN PANEL KI SARI ADS KO FETCH KARNA
             const mSnap = await getDocs(collection(db, "main_ads"));
-            
             mSnap.forEach(t => {
-                // Agar user ne aaj ye ad 2 baar se kam dekhi hai toh dikhao
                 if((logs[t.id] || 0) < 2) {
                     html += `
                     <div class="glass p-6 flex justify-between items-center border border-indigo-500/20">
@@ -143,48 +120,33 @@
                     </div>`;
                 }
             });
-
-            list.innerHTML = html || `<p class="text-center text-slate-500 font-bold uppercase">All Nodes Completed!</p>`;
+            list.innerHTML = html || `<p class="text-center text-slate-500 font-bold uppercase">All Done!</p>`;
         }
 
         window.startAdFlow = (reward, link, taskId, type) => {
             activeReward = parseInt(reward); activeTaskId = taskId;
             document.getElementById('adIframe').src = link;
             document.getElementById('adWrapper').classList.add('active');
-            const timerLabel = document.getElementById('adTimerSec');
-            const actionArea = document.getElementById('adActionArea');
-            actionArea.innerHTML = `<span class="text-[10px] text-slate-500 font-bold uppercase italic">Verifying...</span>`;
-            
-            if(currentTimer) clearInterval(currentTimer);
-            let t = (type === 'premium') ? 50 : 30; // Aap timer yahan se change kar sakte hain
-
+            let t = 50;
             currentTimer = setInterval(() => {
-                t--; timerLabel.innerText = "VERIFYING IN " + t + "S";
+                t--; document.getElementById('adTimerSec').innerText = "VERIFYING IN " + t + "S";
                 if(t <= 0){ 
                     clearInterval(currentTimer); 
-                    timerLabel.innerText = "VERIFIED ✅";
-                    actionArea.innerHTML = `<button onclick="finishTaskAndPay()" class="close-x">✕</button>`; 
+                    document.getElementById('adActionArea').innerHTML = `<button onclick="finishTaskAndPay()" class="close-x">✕</button>`; 
                 }
             }, 1000);
         };
 
         window.finishTaskAndPay = async () => {
-            const uid = auth.currentUser.uid, userRef = doc(db, "users", uid), today = new Date().toDateString();
-            try {
-                await runTransaction(db, async (t) => {
-                    const snap = await t.get(userRef);
-                    let logs = snap.data().taskLogs || {}; if(!logs[today]) logs[today] = {};
-                    logs[today][activeTaskId] = (logs[today][activeTaskId] || 0) + 1;
-                    t.update(userRef, { coins: increment(activeReward), taskLogs: logs });
-                });
-                confetti({ particleCount: 150 });
-                document.getElementById('adWrapper').classList.remove('active');
-            } catch (e) { console.log(e); }
-        };
-
-        window.switchTab = (id) => { 
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); 
-            document.getElementById(id).classList.add('active'); 
+            const userRef = doc(db, "users", auth.currentUser.uid), today = new Date().toDateString();
+            await runTransaction(db, async (t) => {
+                const snap = await t.get(userRef);
+                let logs = snap.data().taskLogs || {}; if(!logs[today]) logs[today] = {};
+                logs[today][activeTaskId] = (logs[today][activeTaskId] || 0) + 1;
+                t.update(userRef, { coins: increment(activeReward), taskLogs: logs });
+            });
+            confetti({ particleCount: 150 });
+            document.getElementById('adWrapper').classList.remove('active');
         };
     </script>
 </body>
