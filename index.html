@@ -24,11 +24,28 @@
         #adWrapper { display: none; position: fixed; inset: 0; background: #000; z-index: 99999; flex-direction: column; }
         #adWrapper.active { display: flex; }
         .close-x { background: #ef4444; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; border: 4px solid #7f1d1d; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
-        /* Adsterra banner fixed at bottom */
-        .bottom-ad-container { position: fixed; bottom: 85px; left: 0; right: 0; z-index: 40; display: flex; justify-content: center; background: rgba(2, 6, 23, 0.9); padding: 5px; backdrop-filter: blur(10px); }
+        #rulesModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 100001; padding: 20px; overflow-y: auto; }
+        .bottom-ad-fix { position: fixed; bottom: 85px; left: 0; right: 0; z-index: 40; display: flex; justify-content: center; background: rgba(2, 6, 23, 0.9); padding: 5px; backdrop-filter: blur(10px); }
     </style>
 </head>
 <body class="pb-64">
+
+    <div id="rulesModal">
+        <div class="max-w-md mx-auto py-10">
+            <h2 class="text-3xl font-black text-indigo-500 italic uppercase mb-6 text-center">Empire Rules 📜</h2>
+            <div class="space-y-4 text-slate-300 text-[10px] font-bold uppercase tracking-wider">
+                <div class="p-4 border-l-2 border-indigo-500 bg-white/5"><p class="text-indigo-400">1. Referral Milestone</p><p>Dost ke 10 ads par 1000 CR.</p></div>
+                <div class="p-4 border-l-2 border-green-500 bg-white/5"><p class="text-green-400">2. Daily Target</p><p>Daily 40 ads target = 50 CR bonus.</p></div>
+                <div class="p-4 border-l-2 border-red-500 bg-white/5"><p class="text-red-400">3. Payout</p><p>Premium (3m) & Task (50s). Wait for X.</p></div>
+            </div>
+            <button onclick="document.getElementById('rulesModal').style.display='none'" class="w-full bg-indigo-600 p-4 rounded-2xl mt-8 font-black uppercase">I Understand</button>
+        </div>
+    </div>
+
+    <div id="maintScreen" class="hidden fixed inset-0 bg-slate-950 z-[100000] flex flex-col items-center justify-center p-10 text-center">
+        <h1 class="text-3xl font-black italic text-indigo-500 mb-2 uppercase">System Offline</h1>
+        <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Maintenance Node Active...</p>
+    </div>
 
     <div id="adWrapper">
         <div class="bg-slate-900 p-4 flex justify-between items-center border-b border-white/10">
@@ -41,42 +58,66 @@
         <iframe id="adIframe" class="flex-grow w-full border-none bg-white"></iframe>
     </div>
 
+    <div id="authScreen" class="flex flex-col justify-center min-h-screen p-8 max-w-md mx-auto text-center">
+        <div class="p-8 glass">
+            <h1 class="text-5xl font-black italic mb-2 text-indigo-500 uppercase">Earnifyx</h1>
+            <p class="text-[10px] text-slate-500 font-bold tracking-[4px] mb-10 uppercase italic">Digital Empire</p>
+            <div class="space-y-4">
+                <input type="text" id="username" placeholder="Full Name" class="simple-input">
+                <input type="email" id="email" placeholder="Email Address" class="simple-input">
+                <input type="password" id="pass" placeholder="Password" class="simple-input">
+                <input type="text" id="refBy" placeholder="Referral Code (Optional)" class="simple-input">
+            </div>
+            <button onclick="handleAuth()" class="w-full bg-indigo-600 p-4 rounded-2xl font-black uppercase text-xs mt-8 transition active:scale-95">Initialize</button>
+        </div>
+    </div>
+
     <div id="mainApp" class="hidden">
+        <div id="noticeBar" class="hidden bg-indigo-600/10 p-3 text-center sticky top-0 z-[60] backdrop-blur-md">
+            <p id="noticeText" class="text-[10px] font-black text-indigo-400 uppercase tracking-widest animate-pulse"></p>
+        </div>
+
         <header class="p-8 flex justify-between items-center border-b border-white/5 sticky top-0 bg-black/50 backdrop-blur-md z-50">
-            <div><h2 id="welcomeUser" class="text-xl font-black italic">---</h2><div class="text-[9px] font-bold text-indigo-400 uppercase mt-1 italic">Rank: Bronze</div></div>
+            <div><h2 id="welcomeUser" class="text-xl font-black italic">---</h2><div id="rankBadge" class="text-[9px] font-bold text-indigo-400 uppercase mt-1 italic">Rank: Bronze</div></div>
             <div class="glass px-5 py-2 border-indigo-500/30 text-right"><p class="text-[9px] font-bold text-indigo-400 uppercase">Vault</p><span id="balance" class="text-xl font-black text-white">0</span></div>
         </header>
 
         <div id="home" class="tab-content active p-6 space-y-4 max-w-lg mx-auto">
             <div class="glass p-5 border-l-4 border-indigo-500 flex justify-between items-center bg-indigo-500/5">
-                <p class="font-black text-sm text-indigo-400 italic uppercase">Daily Target</p>
+                <p class="font-black text-sm text-indigo-400 italic uppercase">Daily 40 Ads Target</p>
                 <p id="dailyAdProgress" class="text-xl font-black text-white">0/40</p>
             </div>
-            
+            <div class="glass p-5 border-l-4 border-green-500 flex justify-between items-center bg-green-500/5">
+                <div><p class="font-bold text-sm text-green-400 italic uppercase">Daily Bonus</p><p class="text-[10px] text-slate-400 uppercase">Collect 50 CR</p></div>
+                <button onclick="claimDailyBonus()" class="bg-green-600 text-black px-5 py-2 rounded-xl text-[10px] font-black uppercase italic">Claim</button>
+            </div>
             <div id="taskList" class="grid grid-cols-1 gap-4"></div>
         </div>
 
-        <div id="leaderboard" class="tab-content p-6 max-w-lg mx-auto">
+        <div id="leaderboard" class="tab-content p-6 space-y-4 max-w-lg mx-auto">
             <h3 class="text-center font-black italic text-xl text-indigo-500 uppercase mb-6">World Rankings 🏆</h3>
             <div id="leaderList" class="space-y-3"></div>
         </div>
 
-        <div id="wallet" class="tab-content p-6 text-center max-w-lg mx-auto">
-            <div class="glass py-16 bg-indigo-600/10"><h2 class="text-6xl font-black italic text-white">₹<span id="cashVal">0</span></h2></div>
-            <div id="withdrawSection" class="mt-8 space-y-4"></div>
+        <div id="wallet" class="tab-content p-6 space-y-6 max-w-lg mx-auto text-center">
+            <div class="glass py-16 bg-gradient-to-b from-indigo-600/10 to-transparent border-indigo-500/10"><h2 class="text-7xl font-black italic text-center">₹<span id="cashVal">0</span></h2></div>
+            <button onclick="shareInvite()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold text-[10px] uppercase shadow-lg">Share Link 🚀</button>
+            <div id="withdrawSection" class="space-y-3 text-left"></div>
         </div>
 
         <div id="profile" class="tab-content p-6 max-w-lg mx-auto">
             <div class="glass p-8 space-y-5">
-                <p class="text-xs font-bold text-slate-500 uppercase">Profile Settings</p>
-                <input type="text" id="pUPI" placeholder="UPI ID (e.g. name@upi)" class="simple-input">
-                <button onclick="saveProfile()" class="w-full bg-indigo-600 p-4 rounded-xl font-bold uppercase italic transition active:scale-95">Save Details</button>
-                <button onclick="logout()" class="w-full text-red-500 font-bold uppercase mt-12 underline italic">Terminate Session</button>
+                <button onclick="document.getElementById('rulesModal').style.display='block'" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl flex justify-between items-center"><span class="text-[10px] font-black uppercase">Empire Rules 📜</span></button>
+                <div class="flex justify-between items-center bg-white/5 p-4 rounded-xl"><p class="text-[10px] font-black text-slate-500 uppercase">Referral Milestone</p><p id="adsCount" class="font-black text-indigo-400 text-lg">0/10</p></div>
+                <input type="text" id="pName" placeholder="Update Name" class="simple-input">
+                <input type="text" id="pUPI" placeholder="UPI ID" class="simple-input">
+                <button onclick="saveProfile()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold uppercase">Sync Profile</button>
             </div>
+            <button onclick="logout()" class="w-full mt-10 text-red-500 font-bold text-xs uppercase underline italic text-center">Terminate Session</button>
         </div>
     </div>
 
-    <div class="bottom-ad-container">
+    <div class="bottom-ad-fix">
         <script type="text/javascript">
           atOptions = { 'key' : '2783e5b5e9656ec03b87289848eba5e4', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
         </script>
@@ -92,8 +133,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, collection, getDocs, updateDoc, increment, runTransaction, orderBy, query, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, updateDoc, increment, getDocs, query, orderBy, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDZ8MsMjt-dhXjY-fyYYtOs-X6UmvLAV3I",
@@ -110,125 +151,102 @@
 
         let userData = {}, activeReward = 0, activeTaskId = "", currentTimer = null;
 
-        onAuthStateChanged(auth, (u) => { 
-            if(u){ 
-                sync(u.uid); 
-                document.getElementById('mainApp').classList.remove('hidden'); 
-                document.getElementById('navBar').classList.remove('hidden'); 
-            } else {
-                window.location.href = "login.html"; // Redirect if not logged in
-            }
-        });
+        onAuthStateChanged(auth, (u) => { if(u){ sync(u.uid); document.getElementById('authScreen').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden'); document.getElementById('navBar').classList.remove('hidden'); } });
 
         function sync(uid) {
+            onSnapshot(doc(db, "settings", "config"), (d) => {
+                if(d.exists()) {
+                    const c = d.data();
+                    if(c.maintenance) document.getElementById('maintScreen').classList.remove('hidden'); else document.getElementById('maintScreen').classList.add('hidden');
+                    if(c.notice) { document.getElementById('noticeBar').classList.remove('hidden'); document.getElementById('noticeText').innerText = c.notice; }
+                }
+            });
             onSnapshot(doc(db, "users", uid), (d) => {
                 if(d.exists()){
                     userData = d.data();
                     document.getElementById('balance').innerText = userData.coins || 0;
                     document.getElementById('cashVal').innerText = Math.floor((userData.coins || 0) / 100);
                     document.getElementById('welcomeUser').innerText = userData.username;
+                    document.getElementById('adsCount').innerText = `${userData.totalAdsWatched || 0}/10`;
+                    document.getElementById('dailyAdProgress').innerText = `${userData.dailyAdsCount?.[new Date().toDateString()] || 0}/40`;
+                    document.getElementById('pName').value = userData.username || "";
                     document.getElementById('pUPI').value = userData.pUPI || "";
                     
                     const wSec = document.getElementById('withdrawSection');
-                    if(userData.lastWithdrawDate === new Date().toDateString()) {
-                        wSec.innerHTML = `<p class="glass p-4 text-[10px] text-slate-500 font-bold uppercase italic">Next Withdrawal Available Tomorrow</p>`;
-                    } else {
-                        wSec.innerHTML = `<button onclick="handleWithdraw(2000)" class="w-full glass p-5 flex justify-between items-center border-indigo-500/20"><span class="font-bold">Withdraw ₹20</span><span class="text-indigo-400 font-black">2000 🪙</span></button>`;
-                    }
-                    renderAllAds();
+                    if(userData.lastWithdrawDate === new Date().toDateString()) wSec.innerHTML = `<div class="glass p-5 text-[10px] text-slate-500 font-black text-center italic">Available Tomorrow</div>`;
+                    else wSec.innerHTML = `<button onclick="handleWithdraw(2000)" class="w-full glass p-5 flex justify-between items-center border border-indigo-500/20"><span class="font-bold text-sm">Withdraw ₹20</span><span class="font-black text-indigo-400">2000 🪙</span></button>`;
+                    renderAll();
                 }
             });
         }
 
-        async function renderAllAds() {
+        async function renderAll() {
             const list = document.getElementById('taskList'), today = new Date().toDateString(), logs = userData.taskLogs?.[today] || {};
             let html = "";
-            
-            // Collections to fetch from
-            const sets = ["main_ads", "tasks"];
-            for (const s of sets) {
-                const snap = await getDocs(collection(db, s));
-                snap.forEach(t => {
-                    if((logs[t.id] || 0) < 2) {
-                        const isPrem = s === "main_ads";
-                        html += `
-                        <div class="glass p-6 flex justify-between items-center border border-indigo-500/20">
-                            <div>
-                                <p class="${isPrem ? 'text-indigo-400' : 'text-green-400'} text-[9px] font-black uppercase italic">${isPrem ? 'Premium Node' : 'Standard Node'}</p>
-                                <p class="font-black text-sm italic">+${t.data().reward} CR</p>
-                            </div>
-                            <button onclick="startAdFlow('${t.data().reward}', '${t.data().link}', '${t.id}', '${isPrem ? 'premium' : 'task'}')" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase italic shadow-lg">Run</button>
-                        </div>`;
-                    }
-                });
-            }
-            list.innerHTML = html || `<p class="text-center text-slate-500 uppercase font-black py-10 italic">All nodes synchronized!</p>`;
+            const mSnap = await getDocs(collection(db, "main_ads"));
+            mSnap.forEach(t => { if((logs[t.id] || 0) < 2) html += `<div class="glass p-6 flex justify-between items-center border border-indigo-500/20"><div><p class="text-indigo-400 text-[9px] font-black uppercase italic">Premium Node</p><p class="font-black text-sm italic">+${t.data().reward} CR</p></div><button onclick="startAdFlow('${t.data().reward}', '${t.data().link}', '${t.id}', 'premium')" class="bg-indigo-600 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase italic">Run Ad</button></div>`; });
+            const tSnap = await getDocs(collection(db, "tasks"));
+            tSnap.forEach(t => { if((logs[t.id] || 0) < 2) html += `<div class="glass p-6 flex justify-between items-center"><div><p class="text-slate-500 text-[8px] font-black uppercase">Standard Task</p><p class="font-black text-sm uppercase text-white">${t.data().title}</p></div><button onclick="startAdFlow('${t.data().reward}', '${t.data().link}', '${t.id}', 'normal')" class="bg-white text-black px-5 py-2 rounded-xl text-[10px] font-black uppercase">Start</button></div>`; });
+            list.innerHTML = html || `<p class="text-center text-slate-500 text-[10px] uppercase font-bold py-10">Nodes Synced!</p>`;
         }
 
         window.startAdFlow = (reward, link, taskId, type) => {
             activeReward = parseInt(reward); activeTaskId = taskId;
             document.getElementById('adIframe').src = link;
             document.getElementById('adWrapper').classList.add('active');
-            
-            // TIMER: Premium = 180s (3m), Task = 50s
             let t = (type === 'premium') ? 180 : 50;
-            
-            if(currentTimer) clearInterval(currentTimer);
-            document.getElementById('adActionArea').innerHTML = ""; // Clear button
-            
             currentTimer = setInterval(() => {
-                t--; 
-                document.getElementById('adTimerSec').innerText = "VERIFYING: " + t + "s";
-                if(t <= 0){ 
-                    clearInterval(currentTimer); 
-                    document.getElementById('adActionArea').innerHTML = `<button onclick="finishTaskAndPay()" class="close-x">✕</button>`; 
-                }
+                t--; document.getElementById('adTimerSec').innerText = "VERIFYING IN " + t + "S";
+                if(t <= 0){ clearInterval(currentTimer); document.getElementById('adActionArea').innerHTML = `<button onclick="finishTaskAndPay()" class="close-x">✕</button>`; }
             }, 1000);
         };
 
         window.finishTaskAndPay = async () => {
             const userRef = doc(db, "users", auth.currentUser.uid), today = new Date().toDateString();
+            let isReferralComplete = ((userData.totalAdsWatched + 1) === 10 && userData.referredBy && !userData.refRewardSent);
+            let todayAds = (userData.dailyAdsCount?.[today] || 0) + 1;
+            let targetBonus = (todayAds === 40 && !userData.dailyTargetBonusClaimed?.[today]) ? 50 : 0;
             await runTransaction(db, async (t) => {
                 const snap = await t.get(userRef);
                 let logs = snap.data().taskLogs || {}; if(!logs[today]) logs[today] = {};
                 logs[today][activeTaskId] = (logs[today][activeTaskId] || 0) + 1;
-                t.update(userRef, { 
-                    coins: increment(activeReward), 
-                    taskLogs: logs,
-                    totalAdsWatched: increment(1) 
-                });
+                let dCounts = snap.data().dailyAdsCount || {}; dCounts[today] = todayAds;
+                let dBonus = snap.data().dailyTargetBonusClaimed || {}; if(targetBonus > 0) dBonus[today] = true;
+                t.update(userRef, { coins: increment(activeReward + targetBonus), taskLogs: logs, totalAdsWatched: increment(1), dailyAdsCount: dCounts, dailyTargetBonusClaimed: dBonus });
+                if(isReferralComplete) { await updateDoc(doc(db, "users", userData.referredBy), { coins: increment(1000) }); t.update(userRef, { refRewardSent: true }); }
             });
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            confetti({ particleCount: 150 });
             document.getElementById('adWrapper').classList.remove('active');
-            document.getElementById('adIframe').src = "";
         };
 
-        window.switchTab = (id) => {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
-            document.getElementById(id).classList.add('active');
-            document.getElementById('btn-' + id).classList.add('nav-active');
-            if(id === 'leaderboard') fetchLeaderboard();
+        window.handleAuth = async () => {
+            const e = document.getElementById('email').value.trim(), p = document.getElementById('pass').value.trim(), u = document.getElementById('username').value.trim(), r = document.getElementById('refBy').value.trim();
+            if(!e || !p || !u) return alert("Fill all details!");
+            try { const rs = await createUserWithEmailAndPassword(auth, e, p); await setDoc(doc(db, "users", rs.user.uid), { username: u, email: e, coins: 100, taskLogs: {}, totalAdsWatched: 0, referredBy: r || null }); } 
+            catch (err) { signInWithEmailAndPassword(auth, e, p).catch(() => alert("Failed!")); }
         };
 
         async function fetchLeaderboard() {
             const q = query(collection(db, "users"), orderBy("coins", "desc"), limit(10));
             const snap = await getDocs(q);
-            let html = "";
-            snap.forEach((u, i) => {
-                html += `<div class="glass p-5 flex justify-between items-center"><span class="font-black italic text-indigo-400">#${i+1}</span><p class="text-sm font-bold uppercase">${u.data().username}</p><p class="font-black text-xs">${u.data().coins} CR</p></div>`;
-            });
+            let html = "", rank = 1; snap.forEach(u => { html += `<div class="glass p-5 flex justify-between items-center"><span class="font-black italic text-indigo-400">#${rank}</span><p class="text-sm font-bold uppercase truncate w-32">${u.data().username}</p><p class="font-black text-xs text-indigo-300">${u.data().coins} CR</p></div>`; rank++; });
             document.getElementById('leaderList').innerHTML = html;
         }
 
-        window.saveProfile = async () => {
-            const upi = document.getElementById('pUPI').value;
-            if(!upi) return alert("Enter UPI ID");
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { pUPI: upi });
-            alert("Profile Synced! ✅");
+        window.switchTab = (id) => { 
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('btn-'+id).classList.add('nav-active');
+            if(id === 'leaderboard') fetchLeaderboard();
         };
 
+        window.handleWithdraw = async (amt) => { if(userData.coins < amt) return alert("Low Balance!"); await addDoc(collection(db, "withdrawals"), { uid: auth.currentUser.uid, username: userData.username, amt: amt, upi: userData.pUPI, status: "pending", date: new Date().toLocaleString() }); await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(-amt), lastWithdrawDate: new Date().toDateString() }); alert("Requested! ✅"); };
+        window.claimDailyBonus = async () => { const today = new Date().toDateString(); if(userData.lastBonusDate === today) return alert("Claimed!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(50), lastBonusDate: today }); alert("50 CR Added!"); };
+        window.saveProfile = async () => { await updateDoc(doc(db, "users", auth.currentUser.uid), { username: document.getElementById('pName').value, pUPI: document.getElementById('pUPI').value }); alert("Saved! ✅"); };
         window.logout = () => signOut(auth).then(() => location.reload());
+        window.shareInvite = () => { navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?ref=${auth.currentUser.uid}`); alert("Link Copied!")
+; };
     </script>
 </body>
 </html>
