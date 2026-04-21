@@ -40,7 +40,7 @@
                 <div class="p-4 border-l-2 border-red-500 bg-white/5"><p class="text-red-400">3. Payout Policy</p><p>Aap din mein sirf ek baar withdraw kar sakte hain.</p></div>
                 <div class="p-4 border-l-2 border-yellow-500 bg-white/5"><p class="text-yellow-400">4. Anti-Cheat</p><p>VPN ya multi-account use karne par permanent BAN.</p></div>
             </div>
-            <button onclick="document.getElementById('rulesModal').style.display='none'" class="w-full bg-indigo-600 p-4 rounded-2xl mt-8 font-black uppercase italic">I Agree</button>
+            <button onclick="document.getElementById('rulesModal').style.display='none'" class="w-full bg-indigo-600 p-4 rounded-2xl mt-8 font-black uppercase italic">I Understand</button>
         </div>
     </div>
 
@@ -78,13 +78,13 @@
     </div>
 
     <div id="mainApp" class="hidden">
-        <div id="noticeBar" class="hidden bg-indigo-500/10 p-3 text-center sticky top-0 z-[60] backdrop-blur-md">
+        <div id="noticeBar" class="hidden bg-indigo-600/10 p-3 text-center sticky top-0 z-[60] backdrop-blur-md">
             <p id="noticeText" class="text-[10px] font-black text-indigo-400 uppercase tracking-widest animate-pulse"></p>
         </div>
 
         <header class="p-8 flex justify-between items-center border-b border-white/5 sticky top-0 bg-black/50 backdrop-blur-md z-50">
             <div><h2 id="welcomeUser" class="text-xl font-black italic">---</h2><div id="rankBadge" class="text-[9px] font-bold text-indigo-400 uppercase mt-1 italic">Rank: Bronze</div></div>
-            <div class="glass px-5 py-2 border-indigo-500/30 text-right"><p class="text-[9px] font-bold text-indigo-400 uppercase">Vault Balance</p><span id="balance" class="text-xl font-black">0</span></div>
+            <div class="glass px-5 py-2 border-indigo-500/30 text-right"><p class="text-[9px] font-bold text-indigo-400 uppercase">Vault</p><span id="balance" class="text-xl font-black text-white">0</span></div>
         </header>
 
         <div id="home" class="tab-content active p-6 space-y-4 max-w-lg mx-auto">
@@ -106,7 +106,7 @@
 
         <div id="wallet" class="tab-content p-6 space-y-6 max-w-lg mx-auto text-center">
             <div class="glass py-16 bg-gradient-to-b from-indigo-600/10 to-transparent border-indigo-500/10"><p class="text-[10px] text-slate-400 uppercase font-bold mb-4 tracking-widest">Earnings</p><h2 class="text-7xl font-black italic text-center">₹<span id="cashVal">0</span></h2></div>
-            <button onclick="shareInvite()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold text-[10px] uppercase shadow-lg">Generate Link 🚀</button>
+            <button onclick="shareInvite()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold text-[10px] uppercase shadow-lg">Share Link 🚀</button>
             <div id="withdrawSection" class="space-y-3 text-left"></div>
         </div>
 
@@ -133,7 +133,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, updateDoc, increment, getDocs, query, orderBy, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, updateDoc, increment, getDocs, query, orderBy, limit, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDZ8MsMjt-dhXjY-fyYYtOs-X6UmvLAV3I",
@@ -260,7 +260,7 @@
             list.innerHTML = html || `<p class="text-center text-slate-500 text-[10px] uppercase font-bold text-center">Node Refreshed!</p>`;
         }
 
-                window.handleWithdraw = async (amt) => {
+             window.handleWithdraw = async (amt) => {
             if(userData.coins < amt) return alert("Low Balance!");
             if(!userData.pUPI) return alert("Save UPI ID in Profile first!");
             
@@ -308,19 +308,31 @@
                     refRewardSent: false 
                 });
             } catch (err) {
-                signInWithEmailAndPassword(auth, e, p).catch(() => alert("Authentication Failed! Check your details."));
+                signInWithEmailAndPassword(auth, e, p).catch(() => alert("Authentication Failed!"));
             }
         };
 
-        window.shareInvite = () => { 
+        // UPDATED: DIRECT SHARE FUNCTION
+        window.shareInvite = async () => { 
             const link = `${window.location.origin}${window.location.pathname}?ref=${auth.currentUser.uid}`;
             navigator.clipboard.writeText(link); 
-            alert("Referral Link Copied! 🚀 Share it with your friends."); 
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'Earnifyx | Tech Empire',
+                        text: 'Bhai, is app par ads dekh kar paise kamao! Join using my link:',
+                        url: link,
+                    });
+                } catch (err) { console.log("Share cancelled"); }
+            } else {
+                alert("Link Copied! 🚀 Share it with your friends.");
+            }
         };
 
         window.claimDailyBonus = async () => { 
             const today = new Date().toDateString();
-            if(userData.lastBonusDate === today) return alert("Bonus already claimed for today!");
+            if(userData.lastBonusDate === today) return alert("Bonus already claimed!");
             
             try {
                 await updateDoc(doc(db, "users", auth.currentUser.uid), { 
@@ -328,9 +340,7 @@
                     lastBonusDate: today 
                 });
                 alert("50 CR Daily Bonus Added! ✅");
-            } catch(e) {
-                alert("Error claiming bonus.");
-            }
+            } catch(e) { alert("Error claiming bonus."); }
         };
 
         window.switchTab = (id) => { 
@@ -345,31 +355,23 @@
             const name = document.getElementById('pName').value;
             const pin = document.getElementById('pPin').value;
             const upi = document.getElementById('pUPI').value;
-            
-            if(!name) return alert("Name cannot be empty!");
+            if(!name) return alert("Name is required!");
             
             try {
                 await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-                    username: name, 
-                    pPin: pin, 
-                    pUPI: upi 
+                    username: name, pPin: pin, pUPI: upi 
                 }); 
-                alert("Identity Synced Successfully! ✅"); 
-            } catch(e) {
-                alert("Update Failed!");
-            }
+                alert("Identity Synced! ✅"); 
+            } catch(e) { alert("Update Failed!"); }
         };
 
         window.logout = () => { 
-            if(confirm("Terminate Session and Exit?")) {
-                signOut(auth).then(() => location.reload());
-            }
+            if(confirm("Terminate Session?")) signOut(auth).then(() => location.reload());
         };
         
         window.refreshIframe = () => { 
             const f = document.getElementById('adIframe'); 
-            const s = f.src; 
-            f.src = ""; 
+            const s = f.src; f.src = ""; 
             setTimeout(() => f.src = s, 100); 
         };
     </script>
