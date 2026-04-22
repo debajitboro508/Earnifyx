@@ -79,6 +79,15 @@
         </header>
 
         <div id="home" class="tab-content active p-4 space-y-4 max-w-lg mx-auto">
+            <div class="grid grid-cols-1 gap-3">
+                <div class="glass p-4 border-l-4 border-green-500 flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] font-black text-green-500 uppercase italic">Daily Login Bonus</p>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase">+50 CR Everyday</p>
+                    </div>
+                    <button id="bonusBtn" onclick="claimDailyBonus()" class="bg-green-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase italic">Claim</button>
+                </div>
+            </div>
             <button onclick="document.getElementById('rulesModal').style.display='flex'" class="w-full glass p-3 text-[10px] font-black uppercase text-indigo-400 tracking-widest italic border-indigo-500/30">Read Rules 📜</button>
             <div id="taskList" class="space-y-3"></div>
         </div>
@@ -96,22 +105,13 @@
         <div id="profile" class="tab-content p-6 max-w-lg mx-auto">
             <div class="glass p-6 space-y-5">
                 <h3 class="font-black text-indigo-400 uppercase italic">User Gateway</h3>
-                <div><p class="text-[9px] text-slate-500 uppercase font-bold">Name</p><input type="text" id="profNameInput" class="insta-input mt-1"></div>
-                <div><p class="text-[9px] text-slate-500 uppercase font-bold">Phone</p><input type="text" id="profPhone" class="insta-input mt-1"></div>
-                <div><p class="text-[9px] text-slate-500 uppercase font-bold">Email</p><input type="email" id="profEmail" disabled class="insta-input mt-1 opacity-50"></div>
-                <div><p class="text-[9px] text-slate-500 uppercase font-bold text-indigo-400">UPI ID (Payout Address)</p><input type="text" id="profUPI" placeholder="example@upi" class="insta-input mt-1"></div>
-                
+                <input type="text" id="profNameInput" placeholder="Name" class="insta-input">
+                <input type="text" id="profPhone" placeholder="Phone" class="insta-input">
+                <input type="text" id="profUPI" placeholder="UPI ID (example@upi)" class="insta-input">
                 <button onclick="saveProfile()" class="w-full bg-indigo-600 p-4 rounded-2xl font-black uppercase italic mt-4">Sync Profile</button>
             </div>
             <button onclick="logout()" class="w-full mt-10 text-red-500 font-bold uppercase text-xs italic underline text-center">Logout</button>
         </div>
-    </div>
-
-    <div class="bottom-ad-fix">
-        <script type="text/javascript">
-          atOptions = { 'key' : '2783e5b5e9656ec03b87289848eba5e4', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
-        </script>
-        <script type="text/javascript" src="https://www.highperformanceformat.com/2783e5b5e9656ec03b87289848eba5e4/invoke.js"></script>
     </div>
 
     <nav id="navBar" class="hidden fixed bottom-4 left-4 right-4 glass bg-black/90 border-[#262626] p-4 flex justify-around z-50">
@@ -138,21 +138,24 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // SMART AUTO-FILL FOR REFERRAL CODE
+        // LOCKS
+        let isWithdrawing = false;
+        let isAdStarting = false;
+        let isFinishing = false;
+        let isBonusClaiming = false;
+
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
             const ref = urlParams.get('ref');
             if (ref) document.getElementById('refBy').value = ref;
         };
 
-        let userData = {}, activeReward = 0, activeTaskId = "", currentTimer = null;
-
         window.handleAuth = async () => {
             const e = document.getElementById('email').value, p = document.getElementById('pass').value, u = document.getElementById('username').value, r = document.getElementById('refBy').value;
             if(!e || !p || !u) return alert("Fill Name, Email, Pass!");
             try {
                 const rs = await createUserWithEmailAndPassword(auth, e, p);
-                await setDoc(doc(db, "users", rs.user.uid), { username: u, coins: 100, phone: "", pUPI: "", referredBy: r || null, totalAds: 0, taskLogs: {} });
+                await setDoc(doc(db, "users", rs.user.uid), { username: u, coins: 100, phone: "", pUPI: "", referredBy: r || null, totalAds: 0, taskLogs: {}, lastBonus: "" });
             } catch(err) { signInWithEmailAndPassword(auth, e, p).catch(e => alert(e.message)); }
         };
 
@@ -169,13 +172,20 @@
             onSnapshot(doc(db, "users", uid), (d) => {
                 if(d.exists()){
                     userData = d.data();
+                    const today = new Date().toDateString();
                     document.getElementById('balance').innerText = userData.coins;
                     document.getElementById('wBal').innerText = userData.coins;
                     document.getElementById('cashVal').innerText = (userData.coins / 100).toFixed(0);
                     document.getElementById('profNameInput').value = userData.username;
                     document.getElementById('profPhone').value = userData.phone || "";
-                    document.getElementById('profEmail').value = auth.currentUser.email;
                     document.getElementById('profUPI').value = userData.pUPI || "";
+                    
+                    const bBtn = document.getElementById('bonusBtn');
+                    if(userData.lastBonus === today) {
+                        bBtn.innerText = "Claimed";
+                        bBtn.disabled = true;
+                        bBtn.classList.replace('bg-green-600', 'bg-slate-700');
+                    }
                     renderTasks();
                 }
             });
@@ -194,10 +204,21 @@
                 if((logs[t.id] || 0) < 1) 
                 html += `<div class="glass p-5 flex justify-between items-center border-l-4 border-slate-600"><div><p class="font-black italic text-xs uppercase">${t.data().title}</p><p class="text-[10px] text-slate-400 font-bold">+${t.data().reward} CR</p></div><button onclick="startAd('${t.data().reward}', '${t.data().link}', '${t.id}', 'normal')" class="bg-white text-black px-6 py-2 rounded-xl text-[10px] font-black uppercase italic">Start (50s)</button></div>`;
             });
-            list.innerHTML = html || `<p class="text-center py-10 text-[10px] font-bold uppercase italic text-slate-500 tracking-widest animate-pulse">Waiting for Next Sync...</p>`;
+            list.innerHTML = html || `<p class="text-center py-10 text-[10px] font-bold uppercase italic text-slate-500">All Sync Done!</p>`;
         }
 
+        window.claimDailyBonus = async () => {
+            const today = new Date().toDateString();
+            if(isBonusClaiming || userData.lastBonus === today) return;
+            isBonusClaiming = true;
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: increment(50), lastBonus: today });
+            confetti({ particleCount: 100 });
+            isBonusClaiming = false;
+        };
+
         window.startAd = (reward, link, id, type) => {
+            if(isAdStarting) return;
+            isAdStarting = true;
             activeReward = parseInt(reward); activeTaskId = id;
             document.getElementById('adIframe').src = link;
             document.getElementById('adWrapper').classList.add('active');
@@ -209,41 +230,50 @@
         };
 
         window.finishTask = async () => {
+            if(isFinishing) return;
+            isFinishing = true;
             const today = new Date().toDateString();
-            await runTransaction(db, async (tr) => {
-                const userRef = doc(db, "users", auth.currentUser.uid);
-                // REWARD BOSS WITH 500 COINS ON DOST'S 10th AD
-                const isRefComplete = ((userData.totalAds + 1) === 10 && userData.referredBy && !userData.refPaid);
-                tr.update(userRef, { coins: increment(activeReward), ["taskLogs." + today + "." + activeTaskId]: 1, totalAds: increment(1) });
-                if(isRefComplete) {
-                    tr.update(doc(db, "users", userData.referredBy), { coins: increment(500) });
-                    tr.update(userRef, { refPaid: true });
-                }
-            });
-            confetti({ particleCount: 150 });
+            try {
+                await runTransaction(db, async (tr) => {
+                    const userRef = doc(db, "users", auth.currentUser.uid);
+                    const userSnap = await tr.get(userRef);
+                    if(userSnap.data().taskLogs?.[today]?.[activeTaskId]) throw "Done";
+                    const isRefComplete = ((userSnap.data().totalAds + 1) === 10 && userSnap.data().referredBy && !userSnap.data().refPaid);
+                    tr.update(userRef, { coins: increment(activeReward), ["taskLogs." + today + "." + activeTaskId]: 1, totalAds: increment(1) });
+                    if(isRefComplete) {
+                        tr.update(doc(db, "users", userSnap.data().referredBy), { coins: increment(500) });
+                        tr.update(userRef, { refPaid: true });
+                    }
+                });
+                confetti({ particleCount: 150 });
+            } catch(e) {}
             document.getElementById('adWrapper').classList.remove('active');
             document.getElementById('adActionArea').innerHTML = "";
+            isFinishing = false; isAdStarting = false;
+        };
+
+        window.withdraw = async () => {
+            if(isWithdrawing) return;
+            if(new Date().getDay() !== 0) return alert("Sunday Only!");
+            if(userData.coins < 2000) return alert("Min 2000 CR!");
+            if(!userData.pUPI) return alert("Save UPI ID!");
+            isWithdrawing = true;
+            await addDoc(collection(db, "withdrawals"), { uid: auth.currentUser.uid, username: userData.username, amt: userData.coins, upi: userData.pUPI, status: "pending", date: new Date().toLocaleDateString() });
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: 0 });
+            alert("Request Sent!");
+            isWithdrawing = false;
         };
 
         window.saveProfile = async () => {
             await updateDoc(doc(db, "users", auth.currentUser.uid), { username: document.getElementById('profNameInput').value, phone: document.getElementById('profPhone').value, pUPI: document.getElementById('profUPI').value });
-            alert("Profile Synced! ✅");
-        };
-
-        window.withdraw = async () => {
-            if(new Date().getDay() !== 0) return alert("Withdrawal Gateway opens only on SUNDAY!");
-            if(userData.coins < 2000) return alert("Minimum 2000 CR required!");
-            if(!userData.pUPI) return alert("Save your UPI ID first!");
-            await addDoc(collection(db, "withdrawals"), { uid: auth.currentUser.uid, amt: userData.coins, upi: userData.pUPI, status: "pending", date: new Date().toLocaleDateString() });
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { coins: 0 });
-            alert("Request sent! Payout node active.");
+            alert("Saved! ✅");
         };
 
         window.shareInvite = () => {
             const link = `https://debajitboro508.github.io/Earnifyx/?ref=${auth.currentUser.uid}`;
-            const msg = `Bhai, is app par ads dekh kar paise kamao! Dost join karne par 500 CR bonus. Mera link: ${link}`;
+            const msg = `Bhai, ads dekh kar paise kamao! Dost join karne par 500 CR bonus. Link: ${link}`;
             if(navigator.share) navigator.share({ title: 'Earnifyx', text: msg, url: link });
-            else { navigator.clipboard.writeText(msg); alert("Referral Message Copied! ✅"); }
+            else { navigator.clipboard.writeText(msg); alert("Copied! ✅"); }
         };
 
         window.logout = () => signOut(auth).then(() => location.reload());
