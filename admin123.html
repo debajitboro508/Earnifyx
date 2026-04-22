@@ -3,73 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earnifyx Admin | Tech Control</title>
+    <title>Earnifyx Admin | Empire Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { background: #020617; color: white; min-height: 100vh; font-size: 11px; font-family: 'Outfit', sans-serif; }
         .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 20px; }
         .admin-input { background: #000; border: 1px solid #1e293b; color: white; padding: 12px; border-radius: 12px; width: 100%; margin-bottom: 10px; outline: none; }
-        .stat-card { background: linear-gradient(145deg, #1e1b4b, #0f172a); border: 1px solid #312e81; padding: 15px; border-radius: 15px; text-align: center; }
+        .stat-card { background: linear-gradient(145deg, #1e1b4b, #0f172a); border: 1px solid #312e81; padding: 15px; border-radius: 15px; text-align: center; transition: 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); border-color: #6366f1; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 100; overflow-y: auto; padding: 20px; }
         .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .data-table th, .data-table td { border: 1px solid #1e293b; padding: 10px; text-align: left; }
-        .btn-single-del { background: #ef4444; color: white; padding: 5px 12px; border-radius: 8px; font-weight: 900; text-transform: uppercase; font-size: 10px; }
-        .btn-ban { background: #ef4444; }
-        .btn-unban { background: #22c55e; }
-        .btn-edit { background: #4f46e5; }
+        .data-table th { background: #1e293b; text-transform: uppercase; font-size: 9px; color: #818cf8; }
+        .btn-action { padding: 5px 10px; border-radius: 8px; font-weight: 900; text-transform: uppercase; font-size: 9px; }
     </style>
 </head>
 <body class="p-6">
 
     <div id="dataModal" class="modal">
-        <div class="flex justify-between items-center mb-6">
-            <h2 id="modalTitle" class="text-2xl font-black text-indigo-400 uppercase italic">Empire Database</h2>
-            <button onclick="document.getElementById('dataModal').style.display='none'" class="bg-white text-black px-6 py-2 rounded-full font-black">CLOSE</button>
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-6 sticky top-0 bg-[#000]/80 p-4 backdrop-blur-md rounded-xl">
+                <h2 id="modalTitle" class="text-2xl font-black text-indigo-400 uppercase italic">Database View</h2>
+                <button onclick="document.getElementById('dataModal').style.display='none'" class="bg-white text-black px-8 py-2 rounded-full font-black uppercase text-xs">Close</button>
+            </div>
+            <div id="modalContent" class="overflow-x-auto"></div>
         </div>
-        <div id="modalContent" class="overflow-x-auto p-4"></div>
     </div>
 
     <div class="max-w-7xl mx-auto">
-        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 text-center md:text-left">
-            <div>
-                <h1 class="text-4xl font-black italic uppercase text-indigo-500">EARNIFYX <span class="text-white">ADMIN</span></h1>
-                <p class="text-slate-500 font-bold text-[9px] uppercase tracking-[4px]">Advanced Referral Tracking Active</p>
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+            <div class="text-center md:text-left">
+                <h1 class="text-4xl font-black italic uppercase text-indigo-500 tracking-tighter">EARNIFYX <span class="text-white">ADMIN</span></h1>
+                <p class="text-slate-500 font-bold text-[9px] uppercase tracking-[4px]">Real-time Empire Management Active</p>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <button onclick="showData('users')" class="bg-indigo-600 px-5 py-2 rounded-xl font-bold uppercase">User Master List</button>
-                <button onclick="showData('withdrawals')" class="bg-green-600 px-5 py-2 rounded-xl font-bold uppercase">Withdrawals</button>
-                <button onclick="toggleMaintenance()" id="maintBtn" class="bg-slate-700 px-5 py-2 rounded-xl font-bold uppercase italic">Maint: OFF</button>
+            <div class="flex flex-wrap justify-center gap-3">
+                <button onclick="showData('users')" class="bg-indigo-600 px-6 py-2.5 rounded-xl font-black uppercase italic shadow-lg shadow-indigo-500/20">Users Master</button>
+                <button onclick="showData('withdrawals')" class="bg-green-600 px-6 py-2.5 rounded-xl font-black uppercase italic shadow-lg shadow-green-500/20">Withdrawals</button>
+                <button onclick="toggleMaintenance()" id="maintBtn" class="bg-slate-700 px-6 py-2.5 rounded-xl font-black uppercase italic">Maint: OFF</button>
             </div>
         </header>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="stat-card border-l-4 border-indigo-500"><p class="text-slate-400 text-[9px] uppercase">Empire Size</p><h3 id="statTotalUsers" class="text-xl font-black">---</h3></div>
-            <div class="stat-card border-l-4 border-green-500"><p class="text-slate-400 text-[9px] uppercase">Pending Pay</p><h3 id="statPendingPay" class="text-xl font-black text-green-400">---</h3></div>
-            <div class="stat-card border-l-4 border-yellow-500"><p class="text-slate-400 text-[9px] uppercase">Live Ads</p><h3 id="statTasksCount" class="text-xl font-black text-yellow-500">---</h3></div>
-            <div class="stat-card border-l-4 border-red-500"><p class="text-slate-400 text-[9px] uppercase">Terminated</p><h3 id="statBanned" class="text-xl font-black text-red-500">---</h3></div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <div class="stat-card border-l-4 border-indigo-500"><p class="text-slate-400 text-[9px] uppercase font-bold">Total Citizens</p><h3 id="statTotalUsers" class="text-2xl font-black">---</h3></div>
+            <div class="stat-card border-l-4 border-green-500"><p class="text-slate-400 text-[9px] uppercase font-bold">Pending Payouts</p><h3 id="statPendingPay" class="text-2xl font-black text-green-400">---</h3></div>
+            <div class="stat-card border-l-4 border-yellow-500"><p class="text-slate-400 text-[9px] uppercase font-bold">Live Ad Nodes</p><h3 id="statTasksCount" class="text-2xl font-black text-yellow-500">---</h3></div>
+            <div class="stat-card border-l-4 border-red-500"><p class="text-slate-400 text-[9px] uppercase font-bold">Banned Accounts</p><h3 id="statBanned" class="text-2xl font-black text-red-500">---</h3></div>
         </div>
 
-        <div class="card border-green-500/20 mb-8">
-            <h3 class="font-black mb-4 text-green-500 uppercase italic text-center">💸 Payout Requests</h3>
-            <div id="pendingActions" class="grid grid-cols-1 md:grid-cols-3 gap-4">Scanning...</div>
+        <div class="card border-green-500/20 mb-10">
+            <h3 class="font-black mb-6 text-green-500 uppercase italic text-center text-lg tracking-widest">💸 Sunday Payout Gateway</h3>
+            <div id="pendingActions" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 text-center">Scanning for requests...</div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="card border-yellow-500/20">
-                <h3 class="font-black mb-4 text-yellow-500 uppercase italic text-center">📢 Ads Manager</h3>
-                <input type="text" id="adURL" placeholder="Smartlink URL" class="admin-input">
-                <input type="number" id="adReward" placeholder="Reward Coins" class="admin-input">
-                <button onclick="saveAd()" class="w-full bg-yellow-600 p-3 rounded-xl font-black text-black uppercase mb-6 italic">Publish Ad</button>
-                <div id="mainAdsList" class="space-y-2"></div>
+                <h3 class="font-black mb-4 text-yellow-500 uppercase italic text-center">📢 Premium Ad Manager (3m)</h3>
+                <input type="text" id="adURL" placeholder="Adsterra Smartlink / URL" class="admin-input">
+                <input type="number" id="adReward" placeholder="Reward Coins (e.g. 50)" class="admin-input">
+                <button onclick="saveAd()" class="w-full bg-yellow-600 p-3 rounded-xl font-black text-black uppercase mb-6 italic hover:bg-yellow-500 transition">Publish Premium Node</button>
+                <div id="mainAdsList" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
             </div>
+
             <div class="card border-indigo-500/20">
-                <h3 class="font-black mb-4 text-indigo-400 uppercase italic text-center">➕ Tasks Manager</h3>
-                <input type="text" id="tTitle" placeholder="Task Title" class="admin-input">
+                <h3 class="font-black mb-4 text-indigo-400 uppercase italic text-center">➕ Task Manager (50s)</h3>
+                <input type="text" id="tTitle" placeholder="Task Name (e.g. Visit Website)" class="admin-input">
+                <input type="text" id="tLink" placeholder="Task URL" class="admin-input">
                 <input type="number" id="tReward" placeholder="Reward Coins" class="admin-input">
-                <input type="text" id="tLink" placeholder="Link" class="admin-input">
-                <button onclick="addTask()" class="w-full bg-indigo-600 p-3 rounded-xl font-black uppercase mb-6 italic">Publish Task</button>
-                <div id="adminTaskList" class="space-y-2"></div>
+                <button onclick="addTask()" class="w-full bg-indigo-600 p-3 rounded-xl font-black uppercase mb-6 italic hover:bg-indigo-500 transition">Publish Task Node</button>
+                <div id="adminTaskList" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
             </div>
         </div>
     </div>
@@ -90,93 +92,126 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Ban/Unban Logic
-        window.toggleBan = async (uid, s) => { if(confirm("Terminate/Restore user?")) { await updateDoc(doc(db, "users", uid), { isBlocked: !s }); showData('users'); } };
-        window.editCoins = async (uid, c) => { const n = prompt("Adjust Coins:", c); if(n !== null) { await updateDoc(doc(db, "users", uid), { coins: parseInt(n) }); showData('users'); } };
-        window.toggleMaintenance = async () => { const cur = document.getElementById('maintBtn').innerText.includes("OFF"); await setDoc(doc(db, "settings", "config"), { maintenance: cur }, { merge: true }); };
-        
-        window.saveAd = async () => { await addDoc(collection(db, "main_ads"), { link: document.getElementById('adURL').value, reward: parseInt(document.getElementById('adReward').value), date: Date.now() }); alert("Success!"); };
-        window.addTask = async () => { await addDoc(collection(db, "tasks"), { title: document.getElementById('tTitle').value, reward: parseInt(document.getElementById('tReward').value), link: document.getElementById('tLink').value, date: Date.now() }); alert("Success!"); };
-        window.removeAd = async (id) => { if(confirm("Delete?")) await deleteDoc(doc(db, "main_ads", id)); };
-        window.deleteTask = async (id) => { if(confirm("Delete?")) await deleteDoc(doc(db, "tasks", id)); };
-        window.approvePayout = async (id) => { if(confirm("Mark Paid?")) await updateDoc(doc(db, "withdrawals", id), { status: "approved" }); };
-
+        // SYNC ALL DATA
         function sync() {
+            // Stats & Users
             onSnapshot(collection(db, "users"), s => {
                 document.getElementById('statTotalUsers').innerText = s.size;
                 let banned = 0; s.forEach(d => { if(d.data().isBlocked) banned++; });
                 document.getElementById('statBanned').innerText = banned;
             });
+
+            // Maintenance
             onSnapshot(doc(db, "settings", "config"), d => { if(d.exists()){
-                document.getElementById('maintBtn').innerText = "Maint: " + (d.data().maintenance ? "ON" : "OFF");
-                document.getElementById('maintBtn').className = d.data().maintenance ? "bg-red-600 px-5 py-2 rounded-xl font-bold uppercase" : "bg-slate-700 px-5 py-2 rounded-xl font-bold uppercase";
+                const isM = d.data().maintenance;
+                const btn = document.getElementById('maintBtn');
+                btn.innerText = "Maint: " + (isM ? "ON" : "OFF");
+                btn.className = isM ? "bg-red-600 px-6 py-2.5 rounded-xl font-black uppercase italic" : "bg-slate-700 px-6 py-2.5 rounded-xl font-black uppercase italic";
             }});
+
+            // Payouts
+            onSnapshot(collection(db, "withdrawals"), s => {
+                let html = "", count = 0;
+                s.forEach(d => { 
+                    const dat = d.data();
+                    if(dat.status === "pending"){ 
+                        count++; 
+                        html += `<div class="bg-black/60 p-5 rounded-2xl border border-green-500/20 shadow-xl">
+                            <p class="font-black uppercase text-indigo-400 mb-1">${dat.username}</p>
+                            <p class="text-2xl font-black text-white italic">₹${(dat.amt/100).toFixed(0)}</p>
+                            <p class="text-[9px] text-slate-400 mt-1 mb-4 select-all font-bold">${dat.upi || 'NO UPI'}</p>
+                            <button onclick="approvePayout('${d.id}')" class="bg-green-600 w-full py-2.5 rounded-xl text-black font-black uppercase text-[10px] hover:bg-green-500">MARK PAID</button>
+                        </div>`; 
+                    }
+                });
+                document.getElementById('pendingActions').innerHTML = html || "No Pending Sunday Requests";
+                document.getElementById('statPendingPay').innerText = count;
+            });
+
+            // Premium Ads List
             onSnapshot(collection(db, "main_ads"), s => {
                 document.getElementById('statTasksCount').innerText = s.size;
                 const list = document.getElementById('mainAdsList'); list.innerHTML = "";
-                s.forEach(t => { list.innerHTML += `<div class="flex justify-between p-2 bg-black/40 rounded border border-white/5 mb-1"><p class="truncate w-32 text-yellow-500">${t.data().link}</p><button onclick="removeAd('${t.id}')" class="text-red-500 font-bold">DEL</button></div>`; });
+                s.forEach(t => { list.innerHTML += `<div class="flex justify-between items-center p-3 bg-black/40 rounded-xl border border-white/5 mb-2"><p class="truncate text-[10px] font-bold text-yellow-500 uppercase italic">${t.data().link}</p><button onclick="removeAd('${t.id}')" class="bg-red-500/10 text-red-500 px-3 py-1 rounded-lg font-black text-[9px] border border-red-500/20">DELETE</button></div>`; });
             });
+
+            // Tasks List
             onSnapshot(collection(db, "tasks"), s => {
                 const list = document.getElementById('adminTaskList'); list.innerHTML = "";
-                s.forEach(t => { list.innerHTML += `<div class="flex justify-between p-2 bg-black/40 rounded border border-white/5 mb-1"><p class="truncate w-32 text-indigo-400">${t.data().title}</p><button onclick="deleteTask('${t.id}')" class="text-red-500 font-bold">DEL</button></div>`; });
-            });
-            onSnapshot(collection(db, "withdrawals"), s => {
-                let html = "", count = 0;
-                s.forEach(d => { if(d.data().status === "pending"){ count++; html += `<div class="bg-black/60 p-4 rounded-xl border border-green-500/20 text-center"><p class="font-black uppercase">${d.data().username}</p><p class="text-green-400 text-lg font-black">₹${d.data().amt/100}</p><p class="text-indigo-300 text-[9px] mb-2">${d.data().upi}</p><button onclick="approvePayout('${d.id}')" class="bg-green-600 w-full py-2 rounded-lg text-black font-black uppercase">PAID</button></div>`; }});
-                document.getElementById('pendingActions').innerHTML = html || "No Pending Requests";
-                document.getElementById('statPendingPay').innerText = count;
+                s.forEach(t => { list.innerHTML += `<div class="flex justify-between items-center p-3 bg-black/40 rounded-xl border border-white/5 mb-2"><p class="truncate text-[10px] font-bold text-indigo-400 uppercase italic">${t.data().title}</p><button onclick="deleteTask('${t.id}')" class="bg-red-500/10 text-red-500 px-3 py-1 rounded-lg font-black text-[9px] border border-red-500/20">DELETE</button></div>`; });
             });
         }
 
-        // SMART REFERRAL LOOKUP
-        async function getReferrerDetails(refId) {
-            if(!refId) return "DIRECT";
-            try {
-                const docRef = doc(db, "users", refId);
-                const snap = await getDoc(docRef);
-                if(snap.exists()) {
-                    return `${snap.data().username}<br><span class="text-indigo-400 text-[8px]">${snap.data().email}</span>`;
-                }
-                return "Unknown ID";
-            } catch { return "Error"; }
-        }
+        // ACTIONS
+        window.saveAd = async () => { 
+            const u = document.getElementById('adURL').value, r = document.getElementById('adReward').value;
+            if(!u || !r) return alert("Fill all fields");
+            await addDoc(collection(db, "main_ads"), { link: u, reward: parseInt(r), date: Date.now() }); 
+            alert("Premium Ad Node Live!"); 
+        };
 
+        window.addTask = async () => { 
+            const t = document.getElementById('tTitle').value, l = document.getElementById('tLink').value, r = document.getElementById('tReward').value;
+            if(!t || !l || !r) return alert("Fill all fields");
+            await addDoc(collection(db, "tasks"), { title: t, link: l, reward: parseInt(r), date: Date.now() }); 
+            alert("Task Node Live!"); 
+        };
+
+        window.removeAd = async (id) => { if(confirm("Terminate this Ad Node?")) await deleteDoc(doc(db, "main_ads", id)); };
+        window.deleteTask = async (id) => { if(confirm("Terminate this Task?")) await deleteDoc(doc(db, "tasks", id)); };
+        window.approvePayout = async (id) => { if(confirm("Confirm Payout Successful?")) await updateDoc(doc(db, "withdrawals", id), { status: "approved" }); };
+        window.toggleMaintenance = async () => { const cur = document.getElementById('maintBtn').innerText.includes("OFF"); await setDoc(doc(db, "settings", "config"), { maintenance: cur }, { merge: true }); };
+
+        // USER MASTER LIST POPUP
         window.showData = async (type) => {
             const modal = document.getElementById('dataModal');
             const content = document.getElementById('modalContent');
-            modal.style.display = "block"; content.innerHTML = "<div class='text-center animate-bounce'>Syncing Cloud...</div>";
+            const title = document.getElementById('modalTitle');
+            modal.style.display = "block"; 
+            content.innerHTML = "<p class='text-center py-20 font-black italic animate-pulse'>SYNCHRONIZING WITH CLOUD EMPIRE...</p>";
             
             if (type === 'users') {
+                title.innerText = "Citizen Master Database";
                 const snap = await getDocs(collection(db, "users"));
-                let html = `<table class='data-table'><thead><tr><th>User Info</th><th>Coins</th><th>Ads Done</th><th>Invited By</th><th>Action</th></tr></thead><tbody>`;
+                let html = `<table class='data-table'><thead><tr><th>Citizen Profile</th><th>Wealth (CR)</th><th>Ads Sync</th><th>Invite Node</th><th>Actions</th></tr></thead><tbody>`;
                 
                 for(const d of snap.docs) {
-                    const dta = d.data();
-                    const isB = dta.isBlocked || false;
-                    // Wait for referrer details
-                    const referrerInfo = await getReferrerDetails(dta.referredBy);
+                    const u = d.data();
+                    const isB = u.isBlocked || false;
+                    let refInfo = "DIRECT";
+                    if(u.referredBy) {
+                        const refDoc = await getDoc(doc(db, "users", u.referredBy));
+                        refInfo = refDoc.exists() ? refDoc.data().username : "ID: " + u.referredBy;
+                    }
                     
                     html += `<tr>
-                        <td><b>${dta.username}</b><br><span class="text-slate-500 text-[9px]">${dta.email}</span></td>
-                        <td class="text-green-500 font-black">${dta.coins || 0}</td>
-                        <td>${dta.totalAdsWatched || 0}/10</td>
-                        <td class="font-bold uppercase text-[9px]">${referrerInfo}</td>
+                        <td><b class="text-white">${u.username}</b><br><span class="text-slate-500 font-bold">${u.email}</span><br><span class="text-indigo-400 font-bold">${u.phone || 'NO PHONE'}</span></td>
+                        <td class="text-green-500 font-black text-sm">${u.coins || 0}</td>
+                        <td class="font-bold">${u.totalAdsWatched || 0} Nodes</td>
+                        <td class="font-bold text-indigo-300 text-[9px] uppercase italic">${refInfo}</td>
                         <td>
-                            <div class="flex gap-1">
-                                <button onclick="editCoins('${d.id}', ${dta.coins || 0})" class="btn-edit px-2 py-1 rounded">EDIT</button>
-                                <button onclick="toggleBan('${d.id}', ${isB})" class="${isB ? 'btn-unban' : 'btn-ban'} px-2 py-1 rounded">${isB ? 'UNBAN' : 'BAN'}</button>
+                            <div class="flex gap-2">
+                                <button onclick="editCoins('${d.id}', ${u.coins || 0})" class="bg-white text-black px-3 py-1.5 rounded-lg font-black text-[8px] uppercase">COINS</button>
+                                <button onclick="toggleBan('${d.id}', ${isB})" class="${isB ? 'bg-green-600' : 'bg-red-600'} text-white px-3 py-1.5 rounded-lg font-black text-[8px] uppercase">${isB ? 'RESTORE' : 'TERMINATE'}</button>
                             </div>
                         </td>
                     </tr>`;
                 }
                 content.innerHTML = html + "</tbody></table>";
             } else {
+                title.innerText = "Transaction History Log";
                 const snap = await getDocs(collection(db, "withdrawals"));
-                let html = `<table class='data-table'><thead><tr><th>User</th><th>Amount</th><th>UPI ID</th><th>Status</th></tr></thead><tbody>`;
-                snap.forEach(d => { html += `<tr><td>${d.data().username}</td><td>₹${d.data().amt/100}</td><td class="text-indigo-300">${d.data().upi}</td><td class="font-black uppercase">${d.data().status}</td></tr>`; });
+                let html = `<table class='data-table'><thead><tr><th>Citizen</th><th>Value</th><th>Gateway (UPI)</th><th>Status</th></tr></thead><tbody>`;
+                snap.forEach(d => { 
+                    const w = d.data();
+                    html += `<tr><td>${w.username}</td><td class="text-green-400 font-black italic">₹${(w.amt/100).toFixed(0)}</td><td class="text-indigo-300 font-bold select-all">${w.upi}</td><td class="font-black italic uppercase text-[9px] ${w.status === 'approved' ? 'text-green-500' : 'text-yellow-500'}">${w.status}</td></tr>`; 
+                });
                 content.innerHTML = html + "</tbody></table>";
             }
         };
+
+        window.toggleBan = async (uid, s) => { if(confirm("Change user access status?")) { await updateDoc(doc(db, "users", uid), { isBlocked: !s }); showData('users'); } };
+        window.editCoins = async (uid, c) => { const n = prompt("Inject/Deduct Coins (Current: "+c+"):", c); if(n !== null) { await updateDoc(doc(db, "users", uid), { coins: parseInt(n) }); showData('users'); } };
 
         sync();
     </script>
