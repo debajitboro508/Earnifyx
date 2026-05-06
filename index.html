@@ -23,7 +23,6 @@
         #adWrapper { display: none; position: fixed; inset: 0; background: #000; z-index: 99999; flex-direction: column; }
         #adWrapper.active { display: flex; }
         .close-x { background: #ef4444; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 4px solid #7f1d1d; }
-        .bottom-ad-fix { position: fixed; bottom: 80px; left: 0; right: 0; z-index: 40; display: flex; justify-content: center; background: rgba(0,0,0,0.8); padding: 5px; backdrop-filter: blur(10px); }
         #rulesModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100001; padding: 20px; flex-direction: column; justify-content: center; align-items: center; }
     </style>
 </head>
@@ -210,9 +209,28 @@
             isBonusClaiming = false;
         };
 
+        // Ad injecting function to prevent random ads
+        function injectAdScripts() {
+            const s1 = document.createElement('script');
+            s1.src = "https://pl29211880.profitablecpmratenetwork.com/6c/eb/7c/6ceb7cce01d79f2acaf9e9cdce1cad80.js";
+            s1.id = "ad_script_1";
+            document.head.appendChild(s1);
+            
+            const s2 = document.createElement('script');
+            s2.src = "https://pl29211883.profitablecpmratenetwork.com/66/eb/56/66eb56200857fc2d4bc3226cb621ea67.js";
+            s2.id = "ad_script_2";
+            document.head.appendChild(s2);
+        }
+
+        function removeAdScripts() {
+            document.getElementById('ad_script_1')?.remove();
+            document.getElementById('ad_script_2')?.remove();
+        }
+
         window.startAd = (reward, link, id, type) => {
             if(isAdStarting) return;
             isAdStarting = true;
+            injectAdScripts(); // Load scripts ONLY when starting a task
             activeReward = parseInt(reward); activeTaskId = id;
             document.getElementById('adIframe').src = link;
             document.getElementById('adWrapper').classList.add('active');
@@ -240,8 +258,10 @@
                 });
                 confetti({ particleCount: 150 });
             } catch(e) { console.log("Finalization Error"); }
+            
             document.getElementById('adWrapper').classList.remove('active');
             document.getElementById('adActionArea').innerHTML = "";
+            removeAdScripts(); // Remove scripts after task is done
             isFinishing = false; isAdStarting = false;
         };
 
