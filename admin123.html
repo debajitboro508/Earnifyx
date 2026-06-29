@@ -39,16 +39,30 @@
             </div>
             <div class="flex flex-wrap justify-center gap-3">
                 <button onclick="showData('users')" class="bg-indigo-600 px-6 py-2.5 rounded-xl font-black uppercase italic shadow-lg shadow-indigo-500/20">Users Master</button>
+                <button onclick="showData('pan_history')" class="bg-orange-600 px-6 py-2.5 rounded-xl font-black uppercase italic shadow-lg shadow-orange-500/20">PAN Paid History</button>
                 <button onclick="showData('withdrawals')" class="bg-green-600 px-6 py-2.5 rounded-xl font-black uppercase italic shadow-lg shadow-green-500/20">Withdrawals</button>
-                <button onclick="toggleMaintenance()" id="maintBtn" class="bg-slate-700 px-6 py-2.5 rounded-xl font-black uppercase italic">Maint: OFF</button>
+                <button id="maintBtn" class="bg-slate-700 px-6 py-2.5 rounded-xl font-black uppercase italic">Maint: OFF</button>
             </div>
         </header>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
             <div class="stat-card border-l-4 border-indigo-500"><p class="text-slate-400 text-[9px] uppercase font-bold">Total Citizens</p><h3 id="statTotalUsers" class="text-2xl font-black">---</h3></div>
+            <div class="stat-card border-l-4 border-orange-500"><p class="text-slate-400 text-[9px] uppercase font-bold">PAN Active Leads</p><h3 id="statPanCount" class="text-2xl font-black text-orange-400">---</h3></div>
             <div class="stat-card border-l-4 border-green-500"><p class="text-slate-400 text-[9px] uppercase font-bold">Pending Payouts</p><h3 id="statPendingPay" class="text-2xl font-black text-green-400">---</h3></div>
             <div class="stat-card border-l-4 border-yellow-500"><p class="text-slate-400 text-[9px] uppercase font-bold">Live Ad Nodes</p><h3 id="statTasksCount" class="text-2xl font-black text-yellow-500">---</h3></div>
             <div class="stat-card border-l-4 border-red-500"><p class="text-slate-400 text-[9px] uppercase font-bold">Banned Accounts</p><h3 id="statBanned" class="text-2xl font-black text-red-500">---</h3></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+            <div class="card border-orange-500/20">
+                <h3 class="font-black mb-6 text-orange-500 uppercase italic text-center text-sm tracking-widest">📋 PAN Card Verification Workspace</h3>
+                <div id="panVerificationArea" class="space-y-4 max-h-96 overflow-y-auto pr-2">Scanning new submissions...</div>
+            </div>
+            
+            <div class="card border-red-500/20">
+                <h3 class="font-black mb-6 text-red-500 uppercase italic text-center text-sm tracking-widest">💰 PAN Agent Payout Workspace (Claims)</h3>
+                <div id="panPayoutArea" class="space-y-4 max-h-96 overflow-y-auto pr-2">Scanning user claims...</div>
+            </div>
         </div>
 
         <div class="card border-green-500/20 mb-10">
@@ -61,7 +75,7 @@
                 <h3 class="font-black mb-4 text-yellow-500 uppercase italic text-center">📢 Premium Ad Manager (3m)</h3>
                 <input type="text" id="adURL" placeholder="Adsterra Smartlink / URL" class="admin-input">
                 <input type="number" id="adReward" placeholder="Reward Coins (e.g. 50)" class="admin-input">
-                <button onclick="saveAd()" class="w-full bg-yellow-600 p-3 rounded-xl font-black text-black uppercase mb-6 italic hover:bg-yellow-500 transition">Publish Premium Node</button>
+                <button id="btnPublishAd" class="w-full bg-yellow-600 p-3 rounded-xl font-black text-black uppercase mb-6 italic hover:bg-yellow-500 transition">Publish Premium Node</button>
                 <div id="mainAdsList" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
             </div>
 
@@ -70,7 +84,7 @@
                 <input type="text" id="tTitle" placeholder="Task Name (e.g. Visit Website)" class="admin-input">
                 <input type="text" id="tLink" placeholder="Task URL" class="admin-input">
                 <input type="number" id="tReward" placeholder="Reward Coins" class="admin-input">
-                <button onclick="addTask()" class="w-full bg-indigo-600 p-3 rounded-xl font-black uppercase mb-6 italic hover:bg-indigo-500 transition">Publish Task Node</button>
+                <button id="btnPublishTask" class="w-full bg-indigo-600 p-3 rounded-xl font-black uppercase mb-6 italic hover:bg-indigo-500 transition">Publish Task Node</button>
                 <div id="adminTaskList" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
             </div>
         </div>
@@ -92,16 +106,42 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // SYNC ALL DATA
         function sync() {
-            // Stats & Users
             onSnapshot(collection(db, "users"), s => {
                 document.getElementById('statTotalUsers').innerText = s.size;
                 let banned = 0; s.forEach(d => { if(d.data().isBlocked) banned++; });
                 document.getElementById('statBanned').innerText = banned;
             });
 
-            // Maintenance
+            onSnapshot(collection(db, "pan_business"), s => {
+                let verifyHtml = "", payoutHtml = "", activeCount = 0;
+                s.forEach(d => {
+                    const data = d.data();
+                    if(data.status !== "paid") activeCount++;
+
+                    if(data.status === "submitted") {
+                        verifyHtml += `<div class="bg-black/60 p-4 rounded-xl border border-orange-500/20 flex flex-col justify-between gap-3">
+                            <div>
+                                <p class="text-[10px] text-orange-400 font-bold uppercase">Customer: <span class="text-white select-all">${data.custName}</span> (${data.custMobile})</p>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Agent: ${data.agentName} (${data.agentMobile})</p>
+                            </div>
+                            <button data-id="${d.id}" class="btn-pan-apply bg-orange-600 text-black font-black py-2 rounded-lg text-[9px] uppercase tracking-wider hover:bg-orange-500">MARK APPLIED</button>
+                        </div>`;
+                    } else if(data.status === "claimed") {
+                        payoutHtml += `<div class="bg-black/60 p-4 rounded-xl border border-red-500/20">
+                            <p class="text-sm font-black text-green-400 italic">₹50 COMMISSION CLAIM</p>
+                            <p class="text-[10px] text-slate-400 uppercase mt-1 font-bold">Agent Name: <span class="text-white">${data.agentName}</span></p>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold">Payout Phone: <span class="text-white select-all">${data.claimMobile}</span></p>
+                            <p class="text-xs font-black text-indigo-400 mt-2 select-all bg-black p-2 rounded border border-white/5 font-mono">${data.claimUpi}</p>
+                            <button data-id="${d.id}" class="btn-pan-pay bg-red-600 w-full mt-3 text-white font-black py-2 rounded-lg text-[9px] uppercase tracking-wider hover:bg-red-500">MARK PAID (TERMINATE)</button>
+                        </div>`;
+                    }
+                });
+                document.getElementById('statPanCount').innerText = activeCount;
+                document.getElementById('panVerificationArea').innerHTML = verifyHtml || "<p class='text-center text-slate-500 py-6 font-bold uppercase'>No New Submissions</p>";
+                document.getElementById('panPayoutArea').innerHTML = payoutHtml || "<p class='text-center text-slate-500 py-6 font-bold uppercase'>No Pending Claims</p>";
+            });
+
             onSnapshot(doc(db, "settings", "config"), d => { if(d.exists()){
                 const isM = d.data().maintenance;
                 const btn = document.getElementById('maintBtn');
@@ -109,7 +149,6 @@
                 btn.className = isM ? "bg-red-600 px-6 py-2.5 rounded-xl font-black uppercase italic" : "bg-slate-700 px-6 py-2.5 rounded-xl font-black uppercase italic";
             }});
 
-            // Payouts
             onSnapshot(collection(db, "withdrawals"), s => {
                 let html = "", count = 0;
                 s.forEach(d => { 
@@ -120,7 +159,7 @@
                             <p class="font-black uppercase text-indigo-400 mb-1">${dat.username}</p>
                             <p class="text-2xl font-black text-white italic">₹${(dat.amt/100).toFixed(0)}</p>
                             <p class="text-[9px] text-slate-400 mt-1 mb-4 select-all font-bold">${dat.upi || 'NO UPI'}</p>
-                            <button onclick="approvePayout('${d.id}')" class="bg-green-600 w-full py-2.5 rounded-xl text-black font-black uppercase text-[10px] hover:bg-green-500">MARK PAID</button>
+                            <button data-id="${d.id}" class="btn-approve-payout bg-green-600 w-full py-2.5 rounded-xl text-black font-black uppercase text-[10px] hover:bg-green-500">MARK PAID</button>
                         </div>`; 
                     }
                 });
@@ -128,41 +167,61 @@
                 document.getElementById('statPendingPay').innerText = count;
             });
 
-            // Premium Ads List
             onSnapshot(collection(db, "main_ads"), s => {
                 document.getElementById('statTasksCount').innerText = s.size;
                 const list = document.getElementById('mainAdsList'); list.innerHTML = "";
-                s.forEach(t => { list.innerHTML += `<div class="flex justify-between items-center p-3 bg-black/40 rounded-xl border border-white/5 mb-2"><p class="truncate text-[10px] font-bold text-yellow-500 uppercase italic">${t.data().link}</p><button onclick="removeAd('${t.id}')" class="bg-red-500/10 text-red-500 px-3 py-1 rounded-lg font-black text-[9px] border border-red-500/20">DELETE</button></div>`; });
+                s.forEach(t => { list.innerHTML += `<div class="flex justify-between items-center p-3 bg-black/40 rounded-xl border border-white/5 mb-2"><p class="truncate text-[10px] font-bold text-yellow-500 uppercase italic">${t.data().link}</p><button data-id="${t.id}" class="btn-delete-ad bg-red-500/10 text-red-500 px-3 py-1 rounded-lg font-black text-[9px] border border-red-500/20">DELETE</button></div>`; });
             });
 
-            // Tasks List
             onSnapshot(collection(db, "tasks"), s => {
                 const list = document.getElementById('adminTaskList'); list.innerHTML = "";
-                s.forEach(t => { list.innerHTML += `<div class="flex justify-between items-center p-3 bg-black/40 rounded-xl border border-white/5 mb-2"><p class="truncate text-[10px] font-bold text-indigo-400 uppercase italic">${t.data().title}</p><button onclick="deleteTask('${t.id}')" class="bg-red-500/10 text-red-500 px-3 py-1 rounded-lg font-black text-[9px] border border-red-500/20">DELETE</button></div>`; });
+                s.forEach(t => { list.innerHTML += `<div class="flex justify-between items-center p-3 bg-black/40 rounded-xl border border-white/5 mb-2"><p class="truncate text-[10px] font-bold text-indigo-400 uppercase italic">${t.data().title}</p><button data-id="${t.id}" class="btn-delete-task bg-red-500/10 text-red-500 px-3 py-1 rounded-lg font-black text-[9px] border border-red-500/20">DELETE</button></div>`; });
             });
         }
 
-        // ACTIONS
-        window.saveAd = async () => { 
+        // EVENT LISTENERS FOR BUTTONS (FIXES THE CLICK ISSUES)
+        document.addEventListener('click', async (e) => {
+            if(e.target.classList.contains('btn-pan-apply')) {
+                const id = e.target.getAttribute('data-id');
+                if(confirm("Confirm that this PAN is Applied?")) await updateDoc(doc(db, "pan_business", id), { status: "applied" });
+            }
+            if(e.target.classList.contains('btn-pan-pay')) {
+                const id = e.target.getAttribute('data-id');
+                if(confirm("Are you sure you have sent ₹50 via UPI?")) await updateDoc(doc(db, "pan_business", id), { status: "paid" });
+            }
+            if(e.target.classList.contains('btn-delete-ad')) {
+                const id = e.target.getAttribute('data-id');
+                if(confirm("Terminate this Ad Node?")) await deleteDoc(doc(db, "main_ads", id));
+            }
+            if(e.target.classList.contains('btn-delete-task')) {
+                const id = e.target.getAttribute('data-id');
+                if(confirm("Terminate this Task?")) await deleteDoc(doc(db, "tasks", id));
+            }
+            if(e.target.classList.contains('btn-approve-payout')) {
+                const id = e.target.getAttribute('data-id');
+                if(confirm("Confirm Payout Successful?")) await updateDoc(doc(db, "withdrawals", id), { status: "approved" });
+            }
+        });
+
+        document.getElementById('maintBtn').addEventListener('click', async () => {
+            const cur = document.getElementById('maintBtn').innerText.includes("OFF");
+            await setDoc(doc(db, "settings", "config"), { maintenance: cur }, { merge: true });
+        });
+
+        document.getElementById('btnPublishAd').addEventListener('click', async () => {
             const u = document.getElementById('adURL').value, r = document.getElementById('adReward').value;
             if(!u || !r) return alert("Fill all fields");
             await addDoc(collection(db, "main_ads"), { link: u, reward: parseInt(r), date: Date.now() }); 
-            alert("Premium Ad Node Live!"); 
-        };
+            alert("Premium Ad Node Live!");
+        });
 
-        window.addTask = async () => { 
+        document.getElementById('btnPublishTask').addEventListener('click', async () => {
             const t = document.getElementById('tTitle').value, l = document.getElementById('tLink').value, r = document.getElementById('tReward').value;
             if(!t || !l || !r) return alert("Fill all fields");
             await addDoc(collection(db, "tasks"), { title: t, link: l, reward: parseInt(r), date: Date.now() }); 
-            alert("Task Node Live!"); 
-        };
+            alert("Task Node Live!");
+        });
 
-        window.removeAd = async (id) => { if(confirm("Terminate this Ad Node?")) await deleteDoc(doc(db, "main_ads", id)); };
-        window.deleteTask = async (id) => { if(confirm("Terminate this Task?")) await deleteDoc(doc(db, "tasks", id)); };
-        window.approvePayout = async (id) => { if(confirm("Confirm Payout Successful?")) await updateDoc(doc(db, "withdrawals", id), { status: "approved" }); };
-        window.toggleMaintenance = async () => { const cur = document.getElementById('maintBtn').innerText.includes("OFF"); await setDoc(doc(db, "settings", "config"), { maintenance: cur }, { merge: true }); };
-
-        // USER MASTER LIST POPUP
         window.showData = async (type) => {
             const modal = document.getElementById('dataModal');
             const content = document.getElementById('modalContent');
@@ -174,7 +233,6 @@
                 title.innerText = "Citizen Master Database";
                 const snap = await getDocs(collection(db, "users"));
                 let html = `<table class='data-table'><thead><tr><th>Citizen Profile</th><th>Wealth (CR)</th><th>Ads Sync</th><th>Invite Node</th><th>Actions</th></tr></thead><tbody>`;
-                
                 for(const d of snap.docs) {
                     const u = d.data();
                     const isB = u.isBlocked || false;
@@ -183,7 +241,6 @@
                         const refDoc = await getDoc(doc(db, "users", u.referredBy));
                         refInfo = refDoc.exists() ? refDoc.data().username : "ID: " + u.referredBy;
                     }
-                    
                     html += `<tr>
                         <td><b class="text-white">${u.username}</b><br><span class="text-slate-500 font-bold">${u.email}</span><br><span class="text-indigo-400 font-bold">${u.phone || 'NO PHONE'}</span></td>
                         <td class="text-green-500 font-black text-sm">${u.coins || 0}</td>
@@ -191,13 +248,29 @@
                         <td class="font-bold text-indigo-300 text-[9px] uppercase italic">${refInfo}</td>
                         <td>
                             <div class="flex gap-2">
-                                <button onclick="editCoins('${d.id}', ${u.coins || 0})" class="bg-white text-black px-3 py-1.5 rounded-lg font-black text-[8px] uppercase">COINS</button>
-                                <button onclick="toggleBan('${d.id}', ${isB})" class="${isB ? 'bg-green-600' : 'bg-red-600'} text-white px-3 py-1.5 rounded-lg font-black text-[8px] uppercase">${isB ? 'RESTORE' : 'TERMINATE'}</button>
+                                <button onclick="window.editCoins('${d.id}', ${u.coins || 0})" class="bg-white text-black px-3 py-1.5 rounded-lg font-black text-[8px] uppercase">COINS</button>
+                                <button onclick="window.toggleBan('${d.id}', ${isB})" class="${isB ? 'bg-green-600' : 'bg-red-600'} text-white px-3 py-1.5 rounded-lg font-black text-[8px] uppercase">${isB ? 'RESTORE' : 'TERMINATE'}</button>
                             </div>
                         </td>
                     </tr>`;
                 }
                 content.innerHTML = html + "</tbody></table>";
+            } else if(type === 'pan_history') {
+                title.innerText = "PAN Card History Log";
+                const snap = await getDocs(collection(db, "pan_business"));
+                let html = `<table class='data-table'><thead><tr><th>Customer Details</th><th>Agent Details</th><th>UPI Paid Asset</th><th>Status</th></tr></thead><tbody>`;
+                snap.forEach(d => {
+                    const p = d.data();
+                    if(p.status === "paid") {
+                        html += `<tr>
+                            <td>Name: <b>${p.custName}</b><br>Phone: ${p.custMobile}</td>
+                            <td>Name: <b>${p.agentName}</b><br>Phone: ${p.agentMobile}</td>
+                            <td class="text-green-400 font-mono font-bold">${p.claimUpi} (${p.claimMobile})</td>
+                            <td class="text-green-500 font-black italic uppercase">ARCHIVED & PAID</td>
+                        </tr>`;
+                    }
+                });
+                content.innerHTML = html +  "</tbody></table>";
             } else {
                 title.innerText = "Transaction History Log";
                 const snap = await getDocs(collection(db, "withdrawals"));
